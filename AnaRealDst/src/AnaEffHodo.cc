@@ -384,6 +384,8 @@ int AnaEffHodo::End(PHCompositeNode* topNode)
 		//hodo_eff[i]->SetName(oss.str().c_str());
 		hodo_eff[i]->SetMarkerColor(kRed);
 		hodo_eff[i]->SetLineColor  (kRed);
+		hodo_eff[i]->SetStatisticOption(TEfficiency::kBBayesian);
+        	hodo_eff[i]->SetConfidenceLevel(0.68);
 		hodo_eff[i]->SetMarkerStyle(20);
 		hodo_eff[i]->SetTitle(";Paddles;Paddle Efficiency");
 		hodo_eff[i]->Draw("APE1");
@@ -418,6 +420,8 @@ int AnaEffHodo::End(PHCompositeNode* topNode)
 		hodo_effY[i]->SetMarkerColor(kRed);
 		hodo_effY[i]->SetLineColor  (kRed);
 		hodo_effY[i]->SetMarkerStyle(20);
+		hodo_effY[i]->SetStatisticOption(TEfficiency::kBBayesian);
+                hodo_effY[i]->SetConfidenceLevel(0.68);
 		hodo_effY[i]->SetTitle(";Paddles;Paddle Efficiency");
 		hodo_effY[i]->Draw("APE1");
 		c1->Update();
