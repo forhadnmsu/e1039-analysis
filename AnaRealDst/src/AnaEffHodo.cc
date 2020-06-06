@@ -286,7 +286,7 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 
 
 	for (int i =0; i<=7; i++){
-		if( !(((i<=2 ) && (hv_h2t->size() + hv_h2b->size()  >=1)) || ((i>2 ) && (hv_h4t->size()  +  hv_h4b->size() >=1)))) continue;
+		if( !(((i<=2 ) && (hv_h2t->size() + hv_h2b->size()  >=1)) || ((i>2 ) && (hv_h4t->size()  +  hv_h4b->size() >=1)))) continue; //removing trigger bias
 		int det_ID = geom->getDetectorID(hodoNamesY[i]);
 		double det_z = geom->getPlaneCenterZ(det_ID);
 		TVector3 pos_trk = ht.GetPos(det_z);
@@ -294,10 +294,10 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 		double exp_ypos = pos_trk.Y();
 		int exp_element = geom->getExpElementID(det_ID,pos_trk.Y());
 		shared_ptr<SQHitVector> hv2(UtilSQHit::FindHits(hit_vec,hodoNamesY2[i]));  //hit vector of the opposite palnes  H1R <----> H1L 
-		if( hv2->size() !=0)continue;
-		if (!(exp_element >=1 && exp_element <= nElementsY[i] )) continue;
+		if( hv2->size() !=0)continue;   // ignoring any hits from the opostite plane
+		if (!(exp_element >=1 && exp_element <= nElementsY[i] )) continue;   // giving the accepace cut 
 
-		if (!(((i%2 ==0) && (pos_trk.X()>=0)) || (!(i%2 ==0) && (pos_trk.X()<=0)) ) ) continue;
+		if (!(((i%2 ==0) && (pos_trk.X()>=0)) || (!(i%2 ==0) && (pos_trk.X()<=0)) ) ) continue; // giving the accepace cut 
 		hist_allY[i]->Fill(exp_element);
 		total[i]++;	
 		shared_ptr<SQHitVector> hv(UtilSQHit::FindHits(hit_vec,hodoNamesY[i]));
@@ -313,8 +313,8 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
         			hit_hy.push_back((*it1)->get_element_id());
 
        			 }
-			        int minElementIndex = std::min_element(size_hy.begin(),size_hy.end()) - size_hy.begin();
-        			int minElement = *std::min_element(size_hy.begin(), size_hy.end());
+			        int minElementIndex = std::min_element(size_hy.begin(),size_hy.end()) - size_hy.begin();  // closest  hit element index  from the expected one
+        			int minElement = *std::min_element(size_hy.begin(), size_hy.end()); // closest  hit element
 				if (minElement >=0 )hist_accY[i]->Fill(exp_element);
 				paddle_diffY[i]->Fill(exp_element - hit_hy[minElementIndex] );
 		 
