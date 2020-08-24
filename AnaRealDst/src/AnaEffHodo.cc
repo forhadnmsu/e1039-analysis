@@ -286,7 +286,7 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 
 
 	for (int i =0; i<=7; i++){
-		if( !(((i<=2 ) && (hv_h2t->size() + hv_h2b->size()  >=1)) || ((i>2 ) && (hv_h4t->size()  +  hv_h4b->size() >=1)))) continue; //removing trigger bias
+		if( !(((i<=3 ) && (hv_h2t->size() + hv_h2b->size()  >=1)) || ((i>3 ) && (hv_h4t->size()  +  hv_h4b->size() >=1)))) continue; //removing trigger bias
 		int det_ID = geom->getDetectorID(hodoNamesY[i]);
 		double det_z = geom->getPlaneCenterZ(det_ID);
 		TVector3 pos_trk = ht.GetPos(det_z);
