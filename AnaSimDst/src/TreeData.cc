@@ -2,7 +2,7 @@
 using namespace std;
 
 EventData::EventData()
-  : proc_id(0), trig_bits(0), rec_stat(0), n_dim_true(0), n_dim_reco(0)
+  : proc_id(0), trig_bits(0), rec_stat(0), n_dim_true(0), n_dim_reco(0),trig_matrix1(true),trig_matrix2(true)
 {
   for (int ii = 0; ii < 4; ii++) {
     par_id [ii] = 0;
@@ -11,9 +11,9 @@ EventData::EventData()
 }
 
 TrackData::TrackData() 
-  : charge(0)
+  : charge(0),nhodo(0)
 {
-  ;
+;
 }
   
 DimuonData::DimuonData() 

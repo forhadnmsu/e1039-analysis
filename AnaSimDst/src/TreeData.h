@@ -11,6 +11,8 @@ struct EventData {
   int rec_stat;
   int n_dim_true;
   int n_dim_reco;
+  bool trig_matrix1;
+  bool trig_matrix2;
 
   EventData();
   virtual ~EventData() {;}
@@ -20,6 +22,7 @@ struct EventData {
 
 struct TrackData {
   int            charge;
+  int 		 nhodo;
   TVector3       pos_vtx;
   TLorentzVector mom_vtx;
 

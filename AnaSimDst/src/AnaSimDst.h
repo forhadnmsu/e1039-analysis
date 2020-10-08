@@ -12,7 +12,8 @@ class SRecEvent;
 class SQMCEvent;
 class SQTrackVector;
 class SQDimuonVector;
-
+class SQHitVector;  //this class is for getting the list of spectrometer hits 
+class PHG4TruthInfoContainer; //truth container
 /// An example class to analyze the simulated uDST file.
 class AnaSimDst: public SubsysReco {
   /// Input
@@ -21,7 +22,7 @@ class AnaSimDst: public SubsysReco {
   SQMCEvent     * mi_evt_true;
   SQTrackVector * mi_vec_trk;
   SQDimuonVector* mi_vec_dim;
-
+  SQHitVector*    mi_sqhitvec;
   /// Output
   TFile* file;
   TTree* tree;
