@@ -1,9 +1,7 @@
-#if ROOT_VERSION_CODE >= ROOT_VERSION(6,00,0)
-#include <TSystem.h>
-
-#include "G4_SensitiveDetectors.C"
-#include "G4_Target.C"
-#include "EventDisplay.C"
+#include <top/G4_Beamline.C>
+#include <top/G4_Target.C>
+#include <top/G4_InsensitiveVolumes.C>
+#include <top/G4_SensitiveDetectors.C>
 
 R__LOAD_LIBRARY(libfun4all)
 R__LOAD_LIBRARY(libPHPythia8)
@@ -15,23 +13,25 @@ R__LOAD_LIBRARY(libdptrigger)
 R__LOAD_LIBRARY(libembedding)
 R__LOAD_LIBRARY(libevt_filter)
 R__LOAD_LIBRARY(libktracker)
-R__LOAD_LIBRARY(libmodule_example)
 R__LOAD_LIBRARY(libSQPrimaryGen)
-#endif
-
 using namespace std;
 
-int Fun4Sim(
-    const int nevent = 10
-    )
+int Fun4Sim(const int nevent = 10)
 {
   const double target_coil_pos_z = -300;
   const int nmu = 1;
   int embedding_opt = 0;
+  const bool legacy_rec_container = true;
 
   const bool do_collimator = true;
   const bool do_target = true;
   const bool do_e1039_shielding = true;
+  const bool do_fmag = true;
+  const bool do_kmag = true;
+  const bool do_absorber = true;
+  const bool do_dphodo = true;
+  const bool do_station1DC = false;       //station-1 drift chamber should be turned off by default
+
   const double target_l = 7.9; //cm
   const double target_z = (7.9-target_l)/2.; //cm
   const int use_g4steps = 1;
@@ -40,26 +40,24 @@ int Fun4Sim(
   const double KMAGSTR = -0.951;
 
   const bool gen_pythia8  = true; // false;
+  const bool gen_cosmic   = false;
   const bool gen_gun      = false;
   const bool gen_particle = false;
   const bool read_hepmc   = false;
   const bool gen_e906legacy = false; //E906LegacyGen()
-
-
-  gSystem->Load("libfun4all");
-  gSystem->Load("libg4detectors");
-  gSystem->Load("libg4testbench");
-  gSystem->Load("libg4eval");
-  gSystem->Load("libg4dst");
-  gSystem->Load("libktracker.so");
+  const bool save_in_acc  = false; //< Set true to save only in-acceptance events into DST.
 
   recoConsts *rc = recoConsts::instance();
   rc->set_DoubleFlag("FMAGSTR", FMAGSTR);
   rc->set_DoubleFlag("KMAGSTR", KMAGSTR);
+  //rc->set_DoubleFlag("Y_BEAM", 2.0); // setting Y_BEAM 
+  if(gen_cosmic) {
+    rc->init("cosmic");
+    rc->set_BoolFlag("COARSE_MODE", true);
+    rc->set_DoubleFlag("KMAGSTR", 0.);
+    rc->set_DoubleFlag("FMAGSTR", 0.);
+  }
   rc->Print();
-
-  JobOptsSvc *jobopt_svc = JobOptsSvc::instance();
-  jobopt_svc->init("run7_sim.opts");
 
   GeomSvc::UseDbSvc(true);
   GeomSvc *geom_svc = GeomSvc::instance();
@@ -76,33 +74,30 @@ int Fun4Sim(
 
 
   // pythia8
-  if(gen_pythia8) {
-    gSystem->Load("libPHPythia8.so");
-    
+  if(gen_pythia8) {    
     PHPythia8 *pythia8 = new PHPythia8();
     //pythia8->Verbosity(99);
-    //pythia8->set_config_file("phpythia8_DY.cfg");
-    pythia8->set_config_file("phpythia8_Jpsi.cfg");
-    pythia8->set_vertex_distribution_mean(0, 0, target_coil_pos_z, 0);
+    pythia8->set_config_file("phpythia8_DY.cfg");
+  //  pythia8->set_config_file("phpythia8_Jpsi.cfg");
+    pythia8->set_vertex_distribution_mean(0, 2.0, target_coil_pos_z, 0);
     pythia8->set_embedding_id(1);
     se->registerSubsystem(pythia8);
+
 
     pythia8->set_trigger_AND();
 
     PHPy8ParticleTrigger* trigger_mup = new PHPy8ParticleTrigger();
     trigger_mup->AddParticles("-13");
-    trigger_mup->SetPxHighLow(1.0, -6.0); // J/psi only
+    //trigger_mup->SetPxHighLow(7, 0.5);
     //trigger_mup->SetPyHighLow(6, -6);
-    //trigger_mup->SetPzHighLow(120, 10);
-    trigger_mup->SetPzHighLow(120, 15); // For J/psi
+    trigger_mup->SetPzHighLow(120, 10);
     pythia8->register_trigger(trigger_mup);
 
     PHPy8ParticleTrigger* trigger_mum = new PHPy8ParticleTrigger();
     trigger_mum->AddParticles("13");
-    trigger_mum->SetPxHighLow(6.0, -1.0); // J/psi only
+    //trigger_mum->SetPxHighLow(-0.5, 7);
     //trigger_mum->SetPyHighLow(6, -6);
-    //trigger_mum->SetPzHighLow(120, 10);
-    trigger_mum->SetPzHighLow(120, 15); // For J/psi
+    trigger_mum->SetPzHighLow(120, 10);
     pythia8->register_trigger(trigger_mum);
   }
   
@@ -173,8 +168,7 @@ int Fun4Sim(
     se->registerSubsystem(genm);
   }
 
- // E906LegacyGen
-  //@
+  // E906LegacyGen
   if(gen_e906legacy){
     SQPrimaryParticleGen *e906legacy = new  SQPrimaryParticleGen();
     
@@ -205,17 +199,19 @@ int Fun4Sim(
 
     se->registerSubsystem(e906legacy);
   }
-  //@
 
-
+  if(gen_cosmic) {
+    SQCosmicGen* cosmicGen = new SQCosmicGen();
+    se->registerSubsystem(cosmicGen);
+  }
 
   // Fun4All G4 module
   PHG4Reco *g4Reco = new PHG4Reco();
   //PHG4Reco::G4Seed(123);
   //g4Reco->set_field(5.);
   g4Reco->set_field_map(
-      jobopt_svc->m_fMagFile+" "+
-      jobopt_svc->m_kMagFile+" "+
+      rc->get_CharFlag("fMagFile")+" "+
+      rc->get_CharFlag("kMagFile")+" "+
       Form("%f",FMAGSTR) + " " +
       Form("%f",KMAGSTR) + " " +
       "5.0",
@@ -232,31 +228,38 @@ int Fun4Sim(
   g4Reco->SetPhysicsList("FTFP_BERT");
 
   // insensitive elements of the spectrometer
-  PHG4E1039InsensSubsystem* insens = new PHG4E1039InsensSubsystem("Insens");
-  g4Reco->registerSubsystem(insens);
+  SetupInsensitiveVolumes(g4Reco, do_e1039_shielding, do_fmag, do_kmag, do_absorber);
 
   // collimator, targer and shielding between target and FMag
-  gROOT->LoadMacro("G4_Target.C");
-  SetupTarget(g4Reco, do_collimator, do_target, do_e1039_shielding, target_coil_pos_z, target_l, target_z, use_g4steps);
+  SetupBeamline(g4Reco, do_collimator, target_coil_pos_z - 302.36); // Is the position correct??
+
+  if (do_target) {
+    SetupTarget(g4Reco, target_coil_pos_z, target_l, target_z, use_g4steps);
+  }
 
   // sensitive elements of the spectrometer
-  gROOT->LoadMacro("G4_SensitiveDetectors.C");
-  SetupSensitiveDetectors(g4Reco, 0);
+  SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC);
 
   se->registerSubsystem(g4Reco);
+
+  if (save_in_acc) se->registerSubsystem(new RequireParticlesInAcc());
 
   // save truth info to the Node Tree
   PHG4TruthSubsystem *truth = new PHG4TruthSubsystem();
   g4Reco->registerSubsystem(truth);
 
   // digitizer
-  DPDigitizer *digitizer = new DPDigitizer("DPDigitizer", 0);
+  SQDigitizer *digitizer = new SQDigitizer("DPDigitizer", 0);
   //digitizer->Verbosity(99);
+  digitizer->set_enable_st1dc(do_station1DC);    // these two lines need to be in sync with the parameters used
+  digitizer->set_enable_dphodo(do_dphodo);       // in the SetupSensitiveVolumes() function call above
   se->registerSubsystem(digitizer);
+
+  // Make SQ nodes for truth info
+  se->registerSubsystem(new TruthNodeMaker());
 
   // embedding
   if(embedding_opt == 1) {
-    gSystem->Load("libembedding.so");
     SRawEventEmbed *embed = new SRawEventEmbed("SRawEventEmbed");
     embed->set_in_name("digit_016070_R007.root");
     embed->set_in_tree_name("save");
@@ -269,7 +272,6 @@ int Fun4Sim(
   }
 
   // Trigger Emulator
-  gSystem->Load("libdptrigger.so");
   DPTriggerAnalyzer* dptrigger = new DPTriggerAnalyzer();
   dptrigger->set_hit_container_choice("Vector");
   dptrigger->set_road_set_file_name(gSystem->ExpandPathName("$E1039_RESOURCE/trigger/trigger_67.txt"));
@@ -283,30 +285,28 @@ int Fun4Sim(
   se->registerSubsystem(evt_filter);
 
   // trakcing module
-  gSystem->Load("libktracker.so");
-  KalmanFastTrackingWrapper *ktracker = new KalmanFastTrackingWrapper();
-  //ktracker->Verbosity(99);
-  ktracker->set_enable_event_reducer(true);
-  ktracker->set_DS_level(0);
-  ktracker->set_pattern_db_name(gSystem->ExpandPathName("$E1039_RESOURCE/dsearch/v1/pattern.root"));
-  //ktracker->set_sim_db_name(gSystem->ExpandPathName("$E1039_RESOURCE/dsearch/v1/sim.root"));
-  //PatternDBUtil::ResScaleDC3(3);
-  //PatternDBUtil::LooseMode(false);
-  se->registerSubsystem(ktracker);
+    // trakcing module
+  SQReco* reco = new SQReco();
+  reco->Verbosity(0);
+  //reco->set_geom_file_name("support/geom.root"); //not needed as it's created on the fly
+  reco->set_enable_KF(true);           //Kalman filter not needed for the track finding, disabling KF saves a lot of initialization time
+  reco->setInputTy(SQReco::E1039);     //options are SQReco::E906 and SQReco::E1039
+  reco->setFitterTy(SQReco::KFREF);    //not relavant for the track finding
+  reco->set_evt_reducer_opt("none");   //if not provided, event reducer will be using JobOptsSvc to intialize; to turn off, set it to "none", for normal tracking, set to something like "aoc"
+  reco->set_enable_eval(true);          //set to true to generate evaluation file which includes final track candidates 
+  reco->set_eval_file_name("eval.root");
+  reco->set_enable_eval_dst(false);     //set to true to include final track cnadidates in the DST tree
+  if(gen_cosmic) reco->add_eval_list(3);    //output of cosmic reco is contained in the eval output for now
+  //reco->add_eval_list(3);             //include back partial tracks in eval tree for debuging
+  //reco->add_eval_list(2);             //include station-3+/- in eval tree for debuging
+  //reco->add_eval_list(1);             //include station-2 in eval tree for debugging
+  se->registerSubsystem(reco);
 
-  VertexFit* vertexing = new VertexFit();
-  se->registerSubsystem(vertexing);
+   VertexFit* vertexing = new VertexFit();
+   se->registerSubsystem(vertexing);
 
-  // evaluation module
-  gSystem->Load("libmodule_example.so");
-  TrkEval *trk_eval = new TrkEval();
-  trk_eval->Verbosity(0);
-  trk_eval->set_hit_container_choice("Vector");
-  trk_eval->set_out_name("trk_eval.root");
-  se->registerSubsystem(trk_eval);
-
-  se->registerSubsystem(new TruthNodeMaker());
-  //se->registerSubsystem(new SimDstTrimmer());
+  //// Trim minor data nodes (to reduce the DST file size)
+  se->registerSubsystem(new SimDstTrimmer());
 
   // input - we need a dummy to drive the event loop
   if(read_hepmc) {
@@ -334,31 +334,17 @@ int Fun4Sim(
   //  se->registerOutputManager(out);
   //}
 
-  if (nevent >= 0)
-  {
-    se->run(nevent);
+  se->run(nevent);
 
-    PHGeomUtility::ExportGeomtry(se->topNode(),"geom.root");
+  PHGeomUtility::ExportGeomtry(se->topNode(),"geom.root");
+  
+  // finish job - close and save output files
+  se->End();
+  se->PrintTimer();
+  std::cout << "All done" << std::endl;
 
-    // finish job - close and save output files
-    se->End();
-    se->PrintTimer();
-    std::cout << "All done" << std::endl;
-
-    // cleanup - delete the server and exit
-    delete se;
-    gSystem->Exit(0);
-  } else { // TEve event display
-    gROOT->LoadMacro("EventDisplay.C");
-    EventDisplay(nevent);
-  } 
-
+  // cleanup - delete the server and exit
+  delete se;
+  gSystem->Exit(0);
   return 0;
-}
-
-PHG4ParticleGun *get_gun(const char *name = "PGUN")
-{
-  Fun4AllServer *se = Fun4AllServer::instance();
-  PHG4ParticleGun *pgun = (PHG4ParticleGun *) se->getSubsysReco(name);
-  return pgun;
 }
