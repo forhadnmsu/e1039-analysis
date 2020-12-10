@@ -22,7 +22,10 @@ class AnaEffHodo: public SubsysReco {
   std::ofstream out_File;
   TH1I* hist_all[8];
   TH1I* hist_acc[8];
+  TH1D* h2xt_all[16];
+  TH1D* h2xt_acc[16];
   TH1D* hist_eff[8];
+  TH1D* HodopaddleNames[16];
   TH1D* paddle_diff[8];
   TH1I* hist_allY[8];
   TH1I* hist_accY[8];
@@ -31,6 +34,9 @@ class AnaEffHodo: public SubsysReco {
   TGraphAsymmErrors* graph_eff[8];
   TEfficiency* hodo_eff[8];
   TEfficiency* hodo_effY[8];
+
+   TEfficiency* eff_h2xt[16];
+
   TFile* f_out;
   TH1* h1_eff_all;
   TH1* h1_eff_ok;
