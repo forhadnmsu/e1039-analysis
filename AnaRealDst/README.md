@@ -4,20 +4,18 @@ A compact program to analyze the "DST" file, which is created by the Main DAQ de
 Since it is yet under development and also depends on other software under development,
 it might stop working occasionally.  In such cases, please contact the author.
 
-## Basic Usage
+## Usage:
 
-The procedure below will read the DST file of run 202 (for example), which is
-```
-/data2/e1039/dst/run_000202_spin.root
-```
-and produce basic histograms and ntuple.
+The primary uses of this module is to do high voltage optimizations for all the hodoscopes. Using (x,y,z) hit positions from different detector comsic muon/single tracks have been created. Using these tracks efficiency of individual paddles can be studied. To make sure we do not have any biased in the analysis study, we also have applied the hit conditions, so efficiency-fining plane will not be involved in the track building, and even there was any contribtuions, these tracks won't be taken acount to find the efficiency numbers.  
+
+Since different run number represents different conditions (especially the high voltages), we have tracked the run numbers and the corresponding HV of hodoscopes, so we can easily se the plateau curve.
+
 
 1. source setup.sh
 1. cd work
 1. cmake-e1039-ana
 1. make install
 1. root -b -q '../macro/Fun4RealDst.C(202)'
-1. display h1_ele_H1T.png &
 
 Here are some tips:
 
