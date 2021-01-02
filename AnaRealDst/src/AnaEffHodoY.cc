@@ -17,7 +17,7 @@
 #include <phool/getClass.h>
 #include <geom_svc/GeomSvc.h>
 #include "UtilSQHit.h"
-#include "AnaEffHodo.h"
+#include "AnaEffHodoY.h"
 #include "UtilHodo2.h"
 #include <algorithm>
 #include <vector>
@@ -26,17 +26,14 @@
 #include "TGraphPainter.h"
 #include "TAxis.h"
 #include "TGraphAsymmErrors.h"
-#include <iostream>
-#include <fstream>
-#include <cstring>
 using namespace std;
 
-AnaEffHodo::AnaEffHodo()
+AnaEffHodoY::AnaEffHodoY()
 {
 	;
 }
 
-int AnaEffHodo::Init(PHCompositeNode* topNode)
+int AnaEffHodoY::Init(PHCompositeNode* topNode)
 {
 	n_evt_all = n_evt_trig = n_evt_nhit = 0;
 	track_N1 =  track_N2=0;
@@ -59,44 +56,45 @@ int AnaEffHodo::Init(PHCompositeNode* topNode)
 	sqrt_chi2 = new TH1D("sqrt_chi2", ";sqrt_chi2;Hit count", 70,-20, 50);
 	exp_xH3XT = new TH1D("exp_xH3XT", ";exp_xH3XT;Hit count", 100, -150, 150);
 	TPos_HitPos_diff = new TH1D("TPos_HitPos_diff", ";TPos_HitPos_diff;Hit count", 70,-20, 50); 
-	//vector <string> Names[12];
+	vector <string> Names[12];
 	char buffer[20];
 	////////plane-by-plane eff
-	
-	 int nElements[10] = {23, 23, 16, 16, 16, 16, 16, 16,16,16};
-  	std::string hodoNames_[10] = {"H1T", "H1B", "H2T", "H2B", "H3T", "H3B", "H4Tu", "H4Td","H4Bu", "H4Bd"};
-  	for(int i = 0; i < 10; ++i){
-	  sprintf(buffer, "%s_all", hodoNames_[i].c_str());
-	  hist_all[i] = new TH1I(buffer, buffer, nElements[i], 0.5, nElements[i]+0.5);
 
-	  sprintf(buffer, "%s_acc", hodoNames_[i].c_str());
-	  hist_acc[i] = new TH1I(buffer, buffer, nElements[i], 0.5, nElements[i]+0.5);
+	int nElements[12] = {20, 20, 19, 19, 16, 16,16,16,16,16,16,16};
+	std::string hodoNames_[12] = {"H1L", "H1R", "H2L", "H2R", "H4Y1Ll", "H4Y1Lr", "H4Y1Rl", "H4Y1Rr","H4Y2Ll", "H4Y2Lr", "H4Y2Rl", "H4Y2Rr"};
+	for(int i = 0; i < 12; ++i){
+		sprintf(buffer, "%s_all", hodoNames_[i].c_str());
+		hist_all[i] = new TH1I(buffer, buffer, nElements[i], 0.5, nElements[i]+0.5);
 
-	  sprintf(buffer, "%s_eff", hodoNames_[i].c_str());
-	  hist_eff[i] = new TH1D(buffer, buffer, nElements[i], 0.5, nElements[i]+0.5);
+		sprintf(buffer, "%s_acc", hodoNames_[i].c_str());
+		hist_acc[i] = new TH1I(buffer, buffer, nElements[i], 0.5, nElements[i]+0.5);
 
-	  sprintf(buffer, "%s_paddle_diff", hodoNames_[i].c_str());	
-	  paddle_diff[i] = new TH1I(buffer, buffer, 21, -10.5, 10.5);
+		sprintf(buffer, "%s_eff", hodoNames_[i].c_str());
+		hist_eff[i] = new TH1D(buffer, buffer, nElements[i], 0.5, nElements[i]+0.5);
+
+		sprintf(buffer, "%s_paddle_diff", hodoNames_[i].c_str());	
+		paddle_diff[i] = new TH1I(buffer, buffer, 21, -10.5, 10.5);
 
 	}	
 
 
 
 	///////////////
-	Names[0] = {"H1T1", "H1T2", "H1T3", "H1T4", "H1T5", "H1T6", "H1T7", "H1T8","H1T9","H1T10","H1T11","H1T12", "H1T13", "H1T14", "H1T15", "H1T16","H1T17","H1T18","H1T19","H1T20","H1T21","H1T22","H1T23"};
-	Names[1] = {"H1B1", "H1B2", "H1B3", "H1B4", "H1B5", "H1B6", "H1B7", "H1B8","H1B9","H1B10","H1B11","H1B12", "H1B13", "H1B14", "H1B15", "H1B16","H1B17","H1B18","H1B19","H1B20","H1B21","H1B22","H1B23"};
-	Names[2]= {"H2T1", "H2T2", "H2T3", "H2T4", "H2T5", "H2T6", "H2T7", "H2T8","H2T9","H2T10","H2T11","H2T12", "H2T13", "H2T14", "H2T15", "H2T16"};
-	Names[3]= {"H2B1", "H2B2", "H2B3", "H2B4", "H2B5", "H2B6", "H2B7", "H2B8","H2B9","H2B10","H2B11","H2B12", "H2B13", "H2B14", "H2B15", "H2B16"};
-	Names[4]= {"H3T1", "H3T2", "H3T3", "H3T4", "H3T5", "H3T6", "H3T7", "H3T8","H3T9","H3T10","H3T11","H3T12", "H3T13", "H3T14", "H3T15", "H3T16"};
-	Names[5]= {"H3B1", "H3B2", "H3B3", "H3B4", "H3B5", "H3B6", "H3B7", "H3B8","H3B9","H3B10","H3B11","H3B12", "H3B13", "H3B14", "H3B15", "H3B16"};
-	Names[6]= {"H4Tu1", "H4Tu2", "H4Tu3", "H4Tu4", "H4Tu5", "H4Tu6", "H4Tu7", "H4Tu8","H4Tu9","H4Tu10","H4Tu11","H4Tu12", "H4Tu13", "H4Tu14", "H4Tu15", "H4Tu16"};
-	Names[7]= {"H4Td1", "H4Td2", "H4Td3", "H4Td4", "H4Td5", "H4Td6", "H4Td7", "H4Td8","H4Td9","H4Td10","H4Td11","H4Td12", "H4Td13", "H4Td14", "H4Td15", "H4Td16"};
-
-	Names[8]= {"H4Bu1", "H4Bu2", "H4Bu3", "H4Bu4", "H4Bu5", "H4Bu6", "H4Bu7", "H4Bu8","H4Bu9","H4Bu10","H4Bu11","H4Bu12", "H4Bu13", "H4Bu14", "H4Bu15", "H4Bu16"};
-	Names[9]= {"H4Bd1", "H4Bd2", "H4Bd3", "H4Bd4", "H4Bd5", "H4Bd6", "H4Bd7", "H4Bd8","H4Bd9","H4Bd10","H4Bd11","H4Bd12", "H4Bd13", "H4Bd14", "H4Bd15", "H4Bd16"};
+	Names[0] = {"H1L1", "H1L2", "H1L3", "H1L4", "H1L5", "H1L6", "H1L7", "H1L8","H1L9","H1L10","H1L11","H1L12", "H1L13", "H1L14", "H1L15", "H1L16","H1L17","H1L18","H1L19","H1L20"};
+	Names[1] = {"H1R1", "H1R2", "H1R3", "H1R4", "H1R5", "H1R6", "H1R7", "H1R8","H1R9","H1R10","H1R11","H1R12", "H1R13", "H1R14", "H1R15", "H1R16","H1R17","H1R18","H1R19","H1R20"};
+	Names[2]= {"H2L1", "H2L2", "H2L3", "H2L4", "H2L5", "H2L6", "H2L7", "H2L8","H2L9","H2L10","H2L11","H2L12", "H2L13", "H2L14", "H2L15", "H2L16","H2L17","H2L18","H2L19"};
+	Names[3]= {"H2R1", "H2R2", "H2R3", "H2R4", "H2R5", "H2R6", "H2R7", "H2R8","H2R9","H2R10","H2R11","H2R12", "H2R13", "H2R14", "H2R15", "H2R16","H2R17","H2R18","H2R19"};
+	Names[4]= {"H4Y1Ll1", "H4Y1Ll2", "H4Y1Ll3", "H4Y1Ll4", "H4Y1Ll5", "H4Y1Ll6", "H4Y1Ll7", "H4Y1Ll8","H4Y1Ll9","H4Y1Ll10","H4Y1Ll11","H4Y1Ll12", "H4Y1Ll13", "H4Y1Ll14", "H4Y1Ll15", "H4Y1Ll16"};
+	Names[5]= {"H4Y1Lr1", "H4Y1Lr2", "H4Y1Lr3", "H4Y1Lr4", "H4Y1Lr5", "H4Y1Lr6", "H4Y1Lr7", "H4Y1Lr8","H4Y1Lr9","H4Y1Lr10","H4Y1Lr11","H4Y1Lr12", "H4Y1Lr13", "H4Y1Lr14", "H4Y1Lr15", "H4Y1Lr16"};
+	Names[6]= {"H4Y1Rl1", "H4Y1Rl2", "H4Y1Rl3", "H4Y1Rl4", "H4Y1Rl5", "H4Y1Rl6", "H4Y1Rl7", "H4Y1Rl8","H4Y1Rl9","H4Y1Rl10","H4Y1Rl11","H4Y1Rl12", "H4Y1Rl13", "H4Y1Rl14", "H4Y1Rl15", "H4Y1Rl16"};
+	Names[7]= {"H4Y1Rr1", "H4Y1Rr2", "H4Y1Rr3", "H4Y1Rr4", "H4Y1Rr5", "H4Y1Rr6", "H4Y1Rr7", "H4Y1Rr8","H4Y1Rr9","H4Y1Rr10","H4Y1Rr11","H4Y1Rr12", "H4Y1Rr13", "H4Y1Rr14", "H4Y1Rr15", "H4Y1Rr16"};
+	Names[8]= {"H4Y2Ll1", "H4Y2Ll2", "H4Y2Ll3", "H4Y2Ll4", "H4Y2Ll5", "H4Y2Ll6", "H4Y2Ll7", "H4Y2Ll8","H4Y2Ll9","H4Y2Ll10","H4Y2Ll11","H4Y2Ll12", "H4Y2Ll13", "H4Y2Ll14", "H4Y2Ll15", "H4Y2Ll16"};
+	Names[9]= {"H4Y2Lr1", "H4Y2Lr2", "H4Y2Lr3", "H4Y2Lr4", "H4Y2Lr5", "H4Y2Lr6", "H4Y2Lr7", "H4Y2Lr8","H4Y2Lr9","H4Y2Lr10","H4Y2Lr11","H4Y2Lr12", "H4Y2Lr13", "H4Y2Lr14", "H4Y2Lr15", "H4Y2Lr16"};
+	Names[10]= {"H4Y2Rl1", "H4Y2Rl2", "H4Y2Rl3", "H4Y2Rl4", "H4Y2Rl5", "H4Y2Rl6", "H4Y2Rl7", "H4Y2Rl8","H4Y2Rl9","H4Y2Rl10","H4Y2Rl11","H4Y2Rl12", "H4Y2Rl13", "H4Y2Rl14", "H4Y2Rl15", "H4Y2Rl16"};
+	Names[11]= {"H4Y2Rr1", "H4Y2Rr2", "H4Y2Rr3", "H4Y2Rr4", "H4Y2Rr5", "H4Y2Rr6", "H4Y2Rr7", "H4Y2Rr8","H4Y2Rr9","H4Y2Rr10","H4Y2Rr11","H4Y2Rr12", "H4Y2Rr13", "H4Y2Rr14", "H4Y2Rr15", "H4Y2Rr16"};
 
 	for(int i = 0; i < 16; ++i)  {       
-		for (int k=0; k<10 ; k++){
+		for (int k=0; k<12 ; k++){
 			sprintf(buffer, "%s_acc", Names[k][i].c_str());
 			h_acc[k][i] = new TH1I(buffer, buffer,5, 0.5,5.5);
 
@@ -110,12 +108,12 @@ int AnaEffHodo::Init(PHCompositeNode* topNode)
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int AnaEffHodo::InitRun(PHCompositeNode* topNode)
+int AnaEffHodoY::InitRun(PHCompositeNode* topNode)
 {
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int AnaEffHodo::process_event(PHCompositeNode* topNode)
+int AnaEffHodoY::process_event(PHCompositeNode* topNode)
 {
 	SQEvent* event       = findNode::getClass<SQEvent    >(topNode, "SQEvent");
 	SQHitVector* hit_vec = findNode::getClass<SQHitVector>(topNode, "SQHitVector");
@@ -177,10 +175,9 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 	shared_ptr<SQHitVector> hv_DP2TR(UtilSQHit::FindFirstHits(hit_vec, "DP2TR"));
 	shared_ptr<SQHitVector> hv_DP2BR(UtilSQHit::FindFirstHits(hit_vec, "DP2BR"));
 
-
 	//if(event->get_trigger(SQEvent::NIM1))if ((!((hv_h1l->size() +  hv_h1r->size()) == 1))) return Fun4AllReturnCodes::EVENT_OK; //this appies only when NIM1 fires
 	if ((
-				!((hv_h2l->size() +  hv_h2r->size()) == 1)||
+				!((hv_h2t->size() +  hv_h2b->size()) == 1)||
 				!(hv_DP2TL->size() + hv_DP2TR->size() + hv_DP2BL->size() + hv_DP2BR->size()==1)||
 				!(hv_D2X->size() ==1 ||  hv_D2Xp->size() == 1)||
 				!( ((hv_D3mX->size() ==1 ||  hv_D3mXp->size()==1) &&( hv_D3pX->size() + hv_D3pXp->size() ==0)) || ((hv_D3mX->size() +  hv_D3mXp->size()==0) &&( hv_D3pX->size() ==1 || hv_D3pXp->size() ==1)) )||
@@ -189,6 +186,8 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 				!((hv_h4y2l->size() +  hv_h4y2r->size()) == 1)
 	    )) return Fun4AllReturnCodes::EVENT_OK;
 
+
+	//track building
 	UtilHodo2::Track2D ht;
 	ht.AddChamberHit(hv_D2X->size() > 0 ? hv_D2X->at(0) :hv_D2Xp ->at(0) );
 	if(hv_DP2TL->size() + hv_DP2TR->size()==1) ht.AddHit(hv_DP2TL->size() > 0 ? hv_DP2TL->at(0) : hv_DP2TR->at(0) );
@@ -211,40 +210,42 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 	GeomSvc* geom = GeomSvc::instance();  
 
 	//voltage and run wise efficiency plots
-	std::string hodoNames[10] = {"H1T", "H1B", "H2T", "H2B", "H3T", "H3B", "H4T", "H4T","H4B", "H4B"};
-	std::string hodoNames_[10] = {"H1T", "H1B", "H2T", "H2B", "H3T", "H3B", "H4Tu", "H4Td","H4Bu", "H4Bd"};
-	std::string hodoNames2[10] = {"H1B", "H1T", "H2B", "H2T", "H3B", "H3T", "H4B", "H4B","H4T", "H4T"};
-	int nElements[10] = {23, 23, 16, 16, 16, 16, 16, 16,16,16};
+	std::string hodoNames[12] = {"H1L", "H1R", "H2L", "H2R", "H4Y1L", "H4Y1L","H4Y1R", "H4Y1R","H4Y2L", "H4Y2L","H4Y2R", "H4Y2R"};
+	std::string hodoNames_[12] = {"H1L", "H1R", "H2L", "H2R", "H4Y1Ll", "H4Y1Lr","H4Y1Rl", "H4Y1Rr","H4Y2Ll", "H4Y2Lr","H4Y2Rl", "H4Y2Rr"};
+	std::string hodoNames2[12] = {"H1R", "H1L", "H2R", "H2L", "H4Y1R", "H4Y1R", "H4Y1L", "H4Y1L","H4Y2R", "H4Y2R","H4Y2L", "H4Y2R"};
+	int nElements[12] = {20, 20, 19, 19, 16, 16,16,16,16,16,16,16};
+
 	vector<int> daq_run_new[10];
 	daq_run_new[0] ={2150, 2156, 2157, 2162};
 	daq_run_new[1] ={2238, 2239, 2243, 2244};
 	daq_run_new[2] ={2245,2246};
-	cout << "X============Event Number="<<event->get_event_id()<<" =======Run number " <<event->get_run_id()<<endl;
+
+	cout << "Y============Event Number="<<event->get_event_id()<<" =======Run number " <<event->get_run_id()<<endl;
 
 	///////////////
-	for (int i =0; i<10; i++){
+	for (int i =0; i<12; i++){
 		int det_ID = geom->getDetectorID(hodoNames[i]);
 		double det_z = geom->getPlaneCenterZ(det_ID);
 		TVector3 pos_trk = ht.GetPos(det_z);
-		int exp_element = geom->getExpElementID(det_ID,pos_trk.X());
+		int exp_element = geom->getExpElementID(det_ID,pos_trk.Y());
 		shared_ptr<SQHitVector> hv2(UtilSQHit::FindHits(hit_vec,hodoNames2[i]));  //hit vector of the opposite palnes  H1T <----> H1B 
 		if( hv2->size() !=0)continue;
 		if (!(exp_element >=1 && exp_element <= nElements[i] )) continue;
-		if (!(((i==0 || i==2|| i==4||i==6||i==7) && (pos_trk.Y()>=0)) || (((i==1 || i==3|| i==5||i==8||i==9)) && (pos_trk.Y()<0)) ) ) continue;
+		if (!(((i==0 || i==2|| i==4||i==5||i==8|| i==9) && (pos_trk.X()>=0)) || (((i==1 || i==3|| i==5||i==6||i==7||i==10||i==11)) && (pos_trk.X()<0)) ) ) continue;
 
 		cout << " detector Name ======= " <<  geom->getDetectorName(det_ID)<<endl;
 
 		for(int jj =0; jj<=2; jj++ ){              //jj is the row number , mm is the column
 			int size = daq_run_new[jj].size();
-			for (int mm=0; mm < size; mm++){
-				if(event->get_run_id() == daq_run_new[jj][mm]){    //nominal voltages
-					if(jj==0)hist_all[i]->Fill(exp_element);
-					h_all[i][exp_element-1]->Fill(jj+1);
-					cout << "row numbers : expected elements : "<<jj<<"\t"<< exp_element<<endl;
-				}
-				else continue;
-			}
-		}
+                        for (int mm=0; mm < size; mm++){
+                                if(event->get_run_id() == daq_run_new[jj][mm]){    //nominal voltages
+                                        if(jj==0)hist_all[i]->Fill(exp_element);
+                                        h_all[i][exp_element-1]->Fill(jj+1);
+                                        cout << "row numbers : expected elements : "<<jj<<"\t"<< exp_element<<endl;
+                                }
+                                else continue;
+                        }
+                }		
 
 		//shared_ptr<SQHitVector> hv(UtilSQHit::FindHits(hit_vec,hodoNames[i])); 
 		shared_ptr<SQHitVector> hv(UtilSQHit::FindHits(hit_vec,hodoNames_[i])); //up and down in st4 are also added here
@@ -252,34 +253,34 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 			success[i]++;
 			//begining of the multiple hit searching
 			std:: vector <int> size_hx;
-			std:: vector <int> hit_hx;
+			std:: vector <int> hit_hy;
 			for (SQHitVector::ConstIter it1 = hv->begin(); it1 != hv->end(); it1++) {
 				int diff_from_multiple  = abs(((*it1)->get_element_id() - exp_element ));
 				size_hx.push_back(diff_from_multiple);
-				hit_hx.push_back((*it1)->get_element_id());
+				hit_hy.push_back((*it1)->get_element_id());
 			}
 			int minElementIndex = std::min_element(size_hx.begin(),size_hx.end()) - size_hx.begin();
 			int minElement = *std::min_element(size_hx.begin(), size_hx.end());
-			if (minElement >=0 && abs(exp_element -hit_hx[minElementIndex])<=1){
+			if (minElement >=0 && abs(exp_element -hit_hy[minElementIndex])<=1){
 				for(int jj =0; jj<=2; jj++ ){              //jj is the row number , mm is the column
 					int size = daq_run_new[jj].size();
-					for (int mm=0; mm < size; mm++){
-						if(event->get_run_id() == daq_run_new[jj][mm]){    //nominal voltages
-							if(jj==0)hist_acc[i]->Fill(exp_element);
-							h_acc[i][exp_element-1]->Fill(jj+1);
-							paddle_diff[i]->Fill(exp_element - hit_hx[minElementIndex] );
-							cout << "Hit Element : "<< hit_hx[minElementIndex]<<endl;
-						}
-						else continue;
-					}
-				}
+                                        for (int mm=0; mm < size; mm++){
+                                                if(event->get_run_id() == daq_run_new[jj][mm]){    //nominal voltages
+                                                        if(jj==0)hist_acc[i]->Fill(exp_element);
+                                                        h_acc[i][exp_element-1]->Fill(jj+1);
+                                                        paddle_diff[i]->Fill(exp_element - hit_hy[minElementIndex] );
+                                                        cout << "Hit Element : "<< hit_hy[minElementIndex]<<endl;
+                                                }
+                                                else continue;
+                                        }
+                                }			
 			}
 		}
 	}
 	return Fun4AllReturnCodes::EVENT_OK;
 	}
 
-	int AnaEffHodo::End(PHCompositeNode* topNode)
+	int AnaEffHodoY::End(PHCompositeNode* topNode)
 	{
 		ostringstream oss0,oss;
 		ostringstream oss2;
@@ -294,7 +295,7 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 
 		int m =0;
 		//drawing plane efficiency for HX
-		for(int i = 0; i < 10; ++i)    {
+		for(int i = 0; i < 12; ++i)    {
 			m+=1;
 			c15->cd(m);
 			hodo_eff[i] = new TEfficiency(*hist_acc[i], *hist_all[i]);
@@ -326,77 +327,37 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 			}
 		}	
 
+
 		gStyle->SetErrorX(0.);	
 		vector <string >name={"Nom","Nom+50","Nom+80"};
 
-	
-		//hodoscope voltges paddle by paddle for nominal cases
-		//std::ifstream file("output.txt");
-		std::ifstream file("/data2/analysis/mhossain/ana-project/HodoHV-Scan/e1039-analysis/AnaRealDst/src/output.txt");
-  		string h1;
-  		int h2;
-		vector<string> column1; 
-  		vector<int> column2; 
- 		while (file >> h1>>h2 ) {
-			//cout <<h1<< "\t" << h2<<endl;
-			column1.push_back(h1);
-			column2.push_back(h2);
-		 }
-
-		for (int ii =0; ii<column1.size(); ii++){
-			cout<< column1[ii] << "\t" << column2[ii]<<endl;
-
-		} 	
-		vector <string> hodoN = {"H1XT", "H1XB", "H2XT", "H2XB", "H3XT", "H3XB", "H4XTu", "H4XTd","H4XBu", "H4XBd"};
-		vector <string> vnames[10][3];
-		//finding the voltage nominal voltages
-		for(int k =0; k<10; k++){
-			for (int kk=0; kk<Names[k].size();kk++){
-				//cout << "HodoName "<< Names[k][kk]<<endl;
-				for (int mm=0; mm<column1.size(); mm++){
-					//std::vector<string>::iterator it = std::find(column1.begin(),column1.end(),Names[k][kk]);
-					//int index = std::distance(column1.begin(), it);
-					if(column1[mm] == Names[k][kk]) {
-						vnames[k][0].push_back(std::to_string(abs(column2[mm])));
-						vnames[k][1].push_back(std::to_string(abs(column2[mm]-50)));
-						vnames[k][2].push_back(std::to_string(abs(column2[mm]-80)));
-					}
-				}
-				//cout << "1st : 2nd: 3rd : "<< vnames[ii][] << endl;
-			}
-		}
-
-
-		//////////////////////////
-
-		for(int kk=0; kk<10;kk++){
+		for(int kk=0; kk<12;kk++){
 			for(int i = 0; i < 16; ++i)    {
 				c12->cd();
-				eff_hx[kk][i] = new TEfficiency(*h_acc[kk][i], *h_all[kk][i]);
+				eff_hy[kk][i] = new TEfficiency(*h_acc[kk][i], *h_all[kk][i]);
 				oss.str("");
 				oss2.str("");
-				oss <<"plot/HV-HX/"<< hodo_names[kk][i]->GetName()<<".png";
+				oss <<"plot/HV-HY/"<< hodo_names[kk][i]->GetName()<<".png";
 				oss2 <<hodo_names[kk][i]->GetName();
-				eff_hx[kk][i]->SetName(oss.str().c_str());
-				eff_hx[kk][i]->SetMarkerColor(kRed);
-				eff_hx[kk][i]->SetLineColor  (kRed);
-				eff_hx[kk][i]->SetStatisticOption(TEfficiency::kBBayesian);
-				eff_hx[kk][i]->SetConfidenceLevel(0.68);
-				eff_hx[kk][i]->SetMarkerStyle(20);
-				eff_hx[kk][i]->SetMarkerSize(1.0);
-				eff_hx[kk][i]->SetTitle(";Volatges (-V);Paddle Efficiency");
-				eff_hx[kk][i]->SetTitle(oss2.str().c_str());
-				eff_hx[kk][i]->Draw("APE1");
+				eff_hy[kk][i]->SetName(oss.str().c_str());
+				eff_hy[kk][i]->SetMarkerColor(kRed);
+				eff_hy[kk][i]->SetLineColor  (kRed);
+				eff_hy[kk][i]->SetStatisticOption(TEfficiency::kBBayesian);
+				eff_hy[kk][i]->SetConfidenceLevel(0.68);
+				eff_hy[kk][i]->SetMarkerStyle(20);
+				eff_hy[kk][i]->SetMarkerSize(1.0);
+				eff_hy[kk][i]->SetTitle(";Volatges;Paddle Efficiency");
+				eff_hy[kk][i]->SetTitle(oss2.str().c_str());
+				eff_hy[kk][i]->Draw("APE1");
 				c12->Update();
 				c12->Pad()->Update();
-				TGraphAsymmErrors *gg = eff_hx[kk][i]->GetPaintedGraph();
+				TGraphAsymmErrors *gg = eff_hy[kk][i]->GetPaintedGraph();
 				TAxis *ay = gg->GetYaxis();
 				TAxis *ax = gg->GetXaxis();
 				ax->Set(20,0,10);
 				ay->SetRangeUser(0,1.0); // overwrite auto
 				ax->SetLabelSize(0.05);
-				//for(int k =0; k<=2; k++)ax->SetBinLabel(2*(k+1),name[k].c_str());
-				for(int k =0; k<=2; k++)ax->SetBinLabel(2*(k+1),vnames[kk][k][i].c_str());
+				for(int k =0; k<=2; k++)ax->SetBinLabel(2*(k+1),name[k].c_str());
 				c12->SaveAs(oss.str().c_str());
 				out_File<<endl;	
 			}
@@ -408,4 +369,4 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 		ofs.close();
 		out_File.close();
 		return Fun4AllReturnCodes::EVENT_OK;
-}
+	}
