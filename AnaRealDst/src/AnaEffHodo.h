@@ -69,7 +69,7 @@ class AnaEffHodo: public SubsysReco {
   TH1I* paddle_all[10][16];
   TH1I* paddle_acc[10][16];
   TH1D* paddle_eff[10][16];
-  std::vector <std::string> Names[12];
+  std::vector <std::string> Names[10];
  public:
   AnaEffHodo();
   virtual ~AnaEffHodo() {;}

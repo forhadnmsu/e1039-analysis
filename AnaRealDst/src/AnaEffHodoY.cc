@@ -56,7 +56,7 @@ int AnaEffHodoY::Init(PHCompositeNode* topNode)
 	sqrt_chi2 = new TH1D("sqrt_chi2", ";sqrt_chi2;Hit count", 70,-20, 50);
 	exp_xH3XT = new TH1D("exp_xH3XT", ";exp_xH3XT;Hit count", 100, -150, 150);
 	TPos_HitPos_diff = new TH1D("TPos_HitPos_diff", ";TPos_HitPos_diff;Hit count", 70,-20, 50); 
-	vector <string> Names[12];
+	//vector <string> Names[12];
 	char buffer[20];
 	////////plane-by-plane eff
 
@@ -216,9 +216,10 @@ int AnaEffHodoY::process_event(PHCompositeNode* topNode)
 	int nElements[12] = {20, 20, 19, 19, 16, 16,16,16,16,16,16,16};
 
 	vector<int> daq_run_new[10];
-	daq_run_new[0] ={2150, 2156, 2157, 2162};
-	daq_run_new[1] ={2238, 2239, 2243, 2244};
-	daq_run_new[2] ={2245,2246};
+	daq_run_new[0] ={2250, 2251};
+        daq_run_new[1] ={2150, 2156, 2157, 2162};
+        daq_run_new[2] ={2238, 2239, 2243, 2244};
+        daq_run_new[3] ={2245,2246};
 
 	cout << "Y============Event Number="<<event->get_event_id()<<" =======Run number " <<event->get_run_id()<<endl;
 
@@ -292,6 +293,9 @@ int AnaEffHodoY::process_event(PHCompositeNode* topNode)
 		TCanvas* c12 = new TCanvas("c12", "");
 		c12->SetGrid();
 
+		TCanvas* c16  = new TCanvas("c16","c16",1024,800);
+                c16->SetGrid();
+                c16->Divide(2,2,0.01);
 
 		int m =0;
 		//drawing plane efficiency for HX
@@ -329,11 +333,51 @@ int AnaEffHodoY::process_event(PHCompositeNode* topNode)
 
 
 		gStyle->SetErrorX(0.);	
-		vector <string >name={"Nom","Nom+50","Nom+80"};
+		//hodoscope voltges paddle by paddle for nominal cases
+                std::ifstream file("/data2/analysis/mhossain/ana-project/HodoHV-Scan/e1039-analysis/AnaRealDst/src/outputy.txt");
+                string h1;
+                int h2;
+                vector<string> column1;
+                vector<int> column2;
+                while (file >> h1>>h2 ) {
+                        column1.push_back(h1);
+                        column2.push_back(h2);
+                 }
+                vector <string> vnames[12][4];
 
+                /// getting all the voltage information for the x-labeling in eff-vol plots
+                for(int k =0; k<10; k++){
+                        for (int kk=0; kk<Names[k].size();kk++){
+                                for (int mm=0; mm<column1.size(); mm++){
+                                        if(column1[mm] == Names[k][kk]) {
+                                                vnames[k][0].push_back(std::to_string(abs(column2[mm]+50)));
+                                                vnames[k][1].push_back(std::to_string(abs(column2[mm])));
+                                                vnames[k][2].push_back(std::to_string(abs(column2[mm]-50)));
+                                                vnames[k][3].push_back(std::to_string(abs(column2[mm]-80)));
+                                        }
+                                }
+                        }
+                }
+                //////////////////////////
+
+
+		//for(int k =0; k< column1[k].size(); k++){
+		for(int k =0; k< 20; k++){
+			cout << column1[k]<< "\t"<< column2[k]<<endl;
+	
+		}
+
+		for(int k =0; k<10; k++){
+			for (int kk =0; kk< vnames[k][0].size(); kk++){
+				cout <<"Nmaes: "<< vnames[k][0][kk]<<endl;
+			}
+		}
+
+		int n=0;
 		for(int kk=0; kk<12;kk++){
 			for(int i = 0; i < 16; ++i)    {
-				c12->cd();
+				n+=1;
+                                c16->cd(n);
 				eff_hy[kk][i] = new TEfficiency(*h_acc[kk][i], *h_all[kk][i]);
 				oss.str("");
 				oss2.str("");
@@ -349,20 +393,29 @@ int AnaEffHodoY::process_event(PHCompositeNode* topNode)
 				eff_hy[kk][i]->SetTitle(";Volatges;Paddle Efficiency");
 				eff_hy[kk][i]->SetTitle(oss2.str().c_str());
 				eff_hy[kk][i]->Draw("APE1");
-				c12->Update();
-				c12->Pad()->Update();
+				c16->Update();
+                                c16->Pad()->Update();
 				TGraphAsymmErrors *gg = eff_hy[kk][i]->GetPaintedGraph();
 				TAxis *ay = gg->GetYaxis();
 				TAxis *ax = gg->GetXaxis();
 				ax->Set(20,0,10);
 				ay->SetRangeUser(0,1.0); // overwrite auto
 				ax->SetLabelSize(0.05);
-				for(int k =0; k<=2; k++)ax->SetBinLabel(2*(k+1),name[k].c_str());
-				c12->SaveAs(oss.str().c_str());
+
+				for(int k =0; k<=3; k++){
+                                        ax->SetBinLabel(2*(k+1),vnames[kk][k][i].c_str());
+					 if(k==1)ax->ChangeLabel(1,-1,-1,-1,2);
+                                }
+                                if(n==4){
+                                        c16->SaveAs(oss.str().c_str());
+                                        n=0;
+                                 }
 				out_File<<endl;	
 			}
 		}
 		delete c12;
+                delete c15;
+                delete c16;
 		f_out->cd();
 		f_out->Write();
 		f_out->Close();

@@ -180,13 +180,15 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 
 	//if(event->get_trigger(SQEvent::NIM1))if ((!((hv_h1l->size() +  hv_h1r->size()) == 1))) return Fun4AllReturnCodes::EVENT_OK; //this appies only when NIM1 fires
 	if ((
-				!((hv_h2l->size() +  hv_h2r->size()) == 1)||
+				!((hv_h2l->size() ==0 &&  hv_h2r->size()==1) ||(hv_h2l->size() ==1 &&  hv_h2r->size()==0)|| (hv_h2l->size() ==1 &&  hv_h2r->size()==1))||
+				//!((hv_h2l->size() +  hv_h2r->size()) == 1)||
 				!(hv_DP2TL->size() + hv_DP2TR->size() + hv_DP2BL->size() + hv_DP2BR->size()==1)||
 				!(hv_D2X->size() ==1 ||  hv_D2Xp->size() == 1)||
 				!( ((hv_D3mX->size() ==1 ||  hv_D3mXp->size()==1) &&( hv_D3pX->size() + hv_D3pXp->size() ==0)) || ((hv_D3mX->size() +  hv_D3mXp->size()==0) &&( hv_D3pX->size() ==1 || hv_D3pXp->size() ==1)) )||
 				//	!(hv_P1X1->size()  == 1 || hv_P1X2->size()  == 1)||
 				//	!(hv_P1Y1->size()  == 1 || hv_P1Y2->size()  == 1)||
-				!((hv_h4y2l->size() +  hv_h4y2r->size()) == 1)
+				//!((hv_h4y2l->size() +  hv_h4y2r->size()) == 1)
+				!((hv_h4y1l->size() +  hv_h4y1r->size()) == 1)
 	    )) return Fun4AllReturnCodes::EVENT_OK;
 
 	UtilHodo2::Track2D ht;
@@ -195,7 +197,8 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 	if(hv_DP2BL->size() + hv_DP2BR->size()==1) ht.AddHit(hv_DP2BL->size() > 0 ? hv_DP2BL->at(0) : hv_DP2BR->at(0) );
 	if (hv_D3mX->size()==1 || hv_D3mXp->size()==1)ht.AddChamberHit(hv_D3mX->size() > 0 ? hv_D3mX->at(0) :hv_D3mXp ->at(0) );
 	if (hv_D3pX->size()==1 || hv_D3pXp->size()==1) ht.AddChamberHit(hv_D3pX->size() > 0 ? hv_D3pX->at(0) :hv_D3pXp ->at(0) );
-	ht.AddHit(hv_h4y2r->size() > 0 ? hv_h4y2r->at(0) : hv_h4y2l->at(0) );
+	//ht.AddHit(hv_h4y2r->size() > 0 ? hv_h4y2r->at(0) : hv_h4y2l->at(0) );
+	ht.AddHit(hv_h4y1r->size() > 0 ? hv_h4y1r->at(0) : hv_h4y1l->at(0) );
 
 	//ht.AddPropTubeHit(hv_P1X1->size() > 0 ? hv_P1X1->at(0) : hv_P1X2->at(0) );
 	//ht.AddPropTubeHit(hv_P1Y1->size() > 0 ? hv_P1Y1->at(0) : hv_P1Y2->at(0) );
@@ -216,9 +219,10 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 	std::string hodoNames2[10] = {"H1B", "H1T", "H2B", "H2T", "H3B", "H3T", "H4B", "H4B","H4T", "H4T"};
 	int nElements[10] = {23, 23, 16, 16, 16, 16, 16, 16,16,16};
 	vector<int> daq_run_new[10];
-	daq_run_new[0] ={2150, 2156, 2157, 2162};
-	daq_run_new[1] ={2238, 2239, 2243, 2244};
-	daq_run_new[2] ={2245,2246};
+	daq_run_new[0] ={2250, 2251};
+	daq_run_new[1] ={2150, 2156, 2157, 2162};
+	daq_run_new[2] ={2238, 2239, 2243, 2244};
+	daq_run_new[3] ={2245,2246};
 	cout << "X============Event Number="<<event->get_event_id()<<" =======Run number " <<event->get_run_id()<<endl;
 
 	///////////////
@@ -234,7 +238,7 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 
 		cout << " detector Name ======= " <<  geom->getDetectorName(det_ID)<<endl;
 
-		for(int jj =0; jj<=2; jj++ ){              //jj is the row number , mm is the column
+		for(int jj =0; jj<=3; jj++ ){              //jj is the row number , mm is the column
 			int size = daq_run_new[jj].size();
 			for (int mm=0; mm < size; mm++){
 				if(event->get_run_id() == daq_run_new[jj][mm]){    //nominal voltages
@@ -261,14 +265,14 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 			int minElementIndex = std::min_element(size_hx.begin(),size_hx.end()) - size_hx.begin();
 			int minElement = *std::min_element(size_hx.begin(), size_hx.end());
 			if (minElement >=0 && abs(exp_element -hit_hx[minElementIndex])<=1){
-				for(int jj =0; jj<=2; jj++ ){              //jj is the row number , mm is the column
+				for(int jj =0; jj<=3; jj++ ){              //jj is the row number , mm is the column
 					int size = daq_run_new[jj].size();
 					for (int mm=0; mm < size; mm++){
 						if(event->get_run_id() == daq_run_new[jj][mm]){    //nominal voltages
 							if(jj==0)hist_acc[i]->Fill(exp_element);
 							h_acc[i][exp_element-1]->Fill(jj+1);
 							paddle_diff[i]->Fill(exp_element - hit_hx[minElementIndex] );
-							cout << "Hit Element : "<< hit_hx[minElementIndex]<<endl;
+							cout << "Hit Element : hodoNames_ "<< hit_hx[minElementIndex]<<"\t"<<hodoNames_[i]<<endl;
 						}
 						else continue;
 					}
@@ -284,9 +288,13 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 		ostringstream oss0,oss;
 		ostringstream oss2;
 
-		TCanvas* c15  = new TCanvas("c1","c1",1024,800);
+		TCanvas* c15  = new TCanvas("c15","c15",1024,800);
 		c15->SetGrid();
 		c15->Divide(2,2,0.01);
+
+		TCanvas* c16  = new TCanvas("c16","c16",1024,800);
+                c16->SetGrid();
+                c16->Divide(2,2,0.01);
 
 		TCanvas* c12 = new TCanvas("c12", "");
 		c12->SetGrid();
@@ -331,47 +339,36 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 
 	
 		//hodoscope voltges paddle by paddle for nominal cases
-		//std::ifstream file("output.txt");
-		std::ifstream file("/data2/analysis/mhossain/ana-project/HodoHV-Scan/e1039-analysis/AnaRealDst/src/output.txt");
+		std::ifstream file("/data2/analysis/mhossain/ana-project/HodoHV-Scan/e1039-analysis/AnaRealDst/src/outputx.txt");
   		string h1;
   		int h2;
 		vector<string> column1; 
   		vector<int> column2; 
  		while (file >> h1>>h2 ) {
-			//cout <<h1<< "\t" << h2<<endl;
 			column1.push_back(h1);
 			column2.push_back(h2);
 		 }
+		vector <string> vnames[10][4];
 
-		for (int ii =0; ii<column1.size(); ii++){
-			cout<< column1[ii] << "\t" << column2[ii]<<endl;
-
-		} 	
-		vector <string> hodoN = {"H1XT", "H1XB", "H2XT", "H2XB", "H3XT", "H3XB", "H4XTu", "H4XTd","H4XBu", "H4XBd"};
-		vector <string> vnames[10][3];
-		//finding the voltage nominal voltages
+		/// getting all the voltage information for the x-labeling in eff-vol plots
 		for(int k =0; k<10; k++){
 			for (int kk=0; kk<Names[k].size();kk++){
-				//cout << "HodoName "<< Names[k][kk]<<endl;
 				for (int mm=0; mm<column1.size(); mm++){
-					//std::vector<string>::iterator it = std::find(column1.begin(),column1.end(),Names[k][kk]);
-					//int index = std::distance(column1.begin(), it);
 					if(column1[mm] == Names[k][kk]) {
-						vnames[k][0].push_back(std::to_string(abs(column2[mm])));
-						vnames[k][1].push_back(std::to_string(abs(column2[mm]-50)));
-						vnames[k][2].push_back(std::to_string(abs(column2[mm]-80)));
+						vnames[k][0].push_back(std::to_string(abs(column2[mm]+50)));
+						vnames[k][1].push_back(std::to_string(abs(column2[mm])));
+						vnames[k][2].push_back(std::to_string(abs(column2[mm]-50)));
+						vnames[k][3].push_back(std::to_string(abs(column2[mm]-80)));
 					}
 				}
-				//cout << "1st : 2nd: 3rd : "<< vnames[ii][] << endl;
 			}
 		}
-
-
 		//////////////////////////
-
+		int n=0;
 		for(int kk=0; kk<10;kk++){
 			for(int i = 0; i < 16; ++i)    {
-				c12->cd();
+				 n+=1;
+                        	 c16->cd(n);
 				eff_hx[kk][i] = new TEfficiency(*h_acc[kk][i], *h_all[kk][i]);
 				oss.str("");
 				oss2.str("");
@@ -387,21 +384,29 @@ int AnaEffHodo::process_event(PHCompositeNode* topNode)
 				eff_hx[kk][i]->SetTitle(";Volatges (-V);Paddle Efficiency");
 				eff_hx[kk][i]->SetTitle(oss2.str().c_str());
 				eff_hx[kk][i]->Draw("APE1");
-				c12->Update();
-				c12->Pad()->Update();
+				c16->Update();
+				c16->Pad()->Update();
 				TGraphAsymmErrors *gg = eff_hx[kk][i]->GetPaintedGraph();
 				TAxis *ay = gg->GetYaxis();
 				TAxis *ax = gg->GetXaxis();
 				ax->Set(20,0,10);
 				ay->SetRangeUser(0,1.0); // overwrite auto
 				ax->SetLabelSize(0.05);
-				//for(int k =0; k<=2; k++)ax->SetBinLabel(2*(k+1),name[k].c_str());
-				for(int k =0; k<=2; k++)ax->SetBinLabel(2*(k+1),vnames[kk][k][i].c_str());
-				c12->SaveAs(oss.str().c_str());
+				for(int k =0; k<=3; k++){
+					ax->SetBinLabel(2*(k+1),vnames[kk][k][i].c_str());
+					if(k==1)ax->ChangeLabel(1,-1,-1,-1,2);
+
+				}
+				if(n==4){
+					c16->SaveAs(oss.str().c_str());
+					n=0;
+                       		 }
 				out_File<<endl;	
 			}
 		}
 		delete c12;
+		delete c15;
+		delete c16;
 		f_out->cd();
 		f_out->Write();
 		f_out->Close();
