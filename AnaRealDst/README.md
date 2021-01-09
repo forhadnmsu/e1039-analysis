@@ -23,7 +23,7 @@ Using (x,y,z) hit positions from different detectors, comsic muon/single tracks 
 
 1. Add all the detector planes (x, and y) for the track building using [UtilHodo2::Track2D](https://github.com/forhadnmsu/e1039-analysis/blob/hodo-hvScan/AnaRealDst/src/UtilHodo2.h).
 1. You have to make sure that the track building detectors always have a hit. 
-1. We will have a staright line fitting, and the lower chi^2 will give you better track quality, but you may add additional track quality requirements to make sure that the effciency numbers are better, but at the same time one needs to be careful so we do not introduce any biases for the efficiency plots.
+1. We will have a staright line fitting, and the lower chi^2 will give you better track quality, but you may add additional track quality requirements to make sure that the effciency numbers are better, but at the same time one needs to be careful so we do not introduce any biases in the efficiency plots.
 
 ## HV- Scanning
 For High voltage scanning, it is very liklely you will use a lot of different DAQ runs, and these runs could have different hodoscope high volatges. It's entrire up to you how you want to coordinate the high volages, with the DAQ run. For my study, I have taken notes for the high volatges for the different DAQ run numbers and associated them in the histogram paddles. You can do similar way if you like.  
