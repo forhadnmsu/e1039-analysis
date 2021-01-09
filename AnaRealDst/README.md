@@ -1,5 +1,5 @@
 # e1039-analysis/AnaRealDst (HV-Efficiency Branch)
-The primary uses of this module is to do high voltage optimizations for all the hodoscopes. This one has been developed from the basic detector analysis module [AnaRealDst](https://github.com/E1039-Collaboration/e1039-analysis), and has been extended and further developed for the high-voltage-scanning and the efficiency study.
+The primary uses of this module is to do the high voltage optimizations and efficiency study for all the hodoscope planes. This module has been developed from the basic detector analysis module [AnaRealDst](https://github.com/E1039-Collaboration/e1039-analysis).
 
 ## Produces to get histograms and ntuple.
 
@@ -11,7 +11,7 @@ The primary uses of this module is to do high voltage optimizations for all the 
 
 use Fun4MultiRealDst.C for multiple runs.
 
-Here are some tips:
+##Some tips:
 
 - You need execute "source setup.sh" every time you open a new terminal.
 - You need execute "make install" every time you modify any file in "src/".
@@ -19,12 +19,14 @@ Here are some tips:
 
 ## Track Building and Getting the efficiency plots
 
-1. Using (x,y,z) hit positions from different detectoris, comsic muon/single tracks can be formed. Using these tracks, efficiency of individual paddles can be studied. Add all the detector planes (x, and y) for the track building using [UtilHodo2::Track2D](https://github.com/forhadnmsu/e1039-analysis/blob/hodo-hvScan/AnaRealDst/src/UtilHodo2.h).
-1. You have to make sure that the track building detectors alwas have a hit. 
-1. Since, you will have a staright line fitting, the lower chi^2 will give you better track quality, but you may add additional track quality requirement to make sure that the effciency number is better, but at the same time one need to be careful so we do not introduces any biases for the efficiency plots.
+Using (x,y,z) hit positions from different detectors, comsic muon/single tracks can be formed. Using these tracks, efficiency of individual hodoscope paddles can be studied. 
+
+1. Add all the detector planes (x, and y) for the track building using [UtilHodo2::Track2D](https://github.com/forhadnmsu/e1039-analysis/blob/hodo-hvScan/AnaRealDst/src/UtilHodo2.h).
+1. You have to make sure that the track building detectors always have a hit. 
+1. We will have a staright line fitting, and the lower chi^2 will give you better track quality, but you may add additional track quality requirements to make sure that the effciency numbers are better, but at the same time one needs to be careful so we do not introduce any biases for the efficiency plots.
 
 ## HV- Scanning
-For High voltage scanning, it is very liklely you will use a lot of different DAQ runs, and these runs could have different hodoscope high volatges. It's entrire up to you how you want to coordinate the high volages, with the DAQ run. For my study, I have took notes the high volatges with the different DAQ run numbers and associated them in the histogram paddles. You can do this way or you follow the way you prefer.  
+For High voltage scanning, it is very liklely you will use a lot of different DAQ runs, and these runs could have different hodoscope high volatges. It's entrire up to you how you want to coordinate the high volages, with the DAQ run. For my study, I have taken notes for the high volatges for the different DAQ run numbers and associated them in the histogram paddles. You can do similar way if you like.  
 
 ## Advanced Usage
 
@@ -40,5 +42,5 @@ For High voltage scanning, it is very liklely you will use a lot of different DA
   You can change them so that you need not give them in the command line.
 
 ## Author
-Regarding the Efficiency Analysis: Forhad Hossain <forhad16@nmsu.edu>
-Regarding Core Software Developement: Kenichi Naknao <knakano@nucl.phys.titech.ac.jp>
+1. Regarding the Efficiency Analysis: Forhad Hossain <forhad16@nmsu.edu>
+1. Regarding Core Software Developement: Kenichi Naknao <knakano@nucl.phys.titech.ac.jp>
