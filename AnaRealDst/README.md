@@ -43,4 +43,4 @@ For High voltage scanning, it is very liklely you will use a lot of different DA
 
 ## Author
 1. Regarding the Efficiency Analysis: Forhad Hossain <forhad16@nmsu.edu>
-1. Regarding Core Software Developement: Kenichi Naknao <knakano@nucl.phys.titech.ac.jp>
+1. Regarding the Core Software Developement: Kenichi Naknao <knakano@nucl.phys.titech.ac.jp>
