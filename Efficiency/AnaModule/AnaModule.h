@@ -10,6 +10,12 @@
 #include <ktracker/FastTracklet.h>
 #include <geom_svc/GeomSvc.h>
 #include <interface_main/SQHit_v1.h>
+#include "TH1D.h"
+#include "TGraphAsymmErrors.h"
+#include "TEfficiency.h"
+#include <TCanvas.h>
+
+
 
 
 class TFile;
@@ -17,6 +23,7 @@ class TTree;
 class SQHitVector;
 class SQTrackVector;
 class SQDimuonVector;
+class TH1;
 
 class AnaModule: public SubsysReco 
 {
@@ -58,6 +65,26 @@ private:
   double y_exp;
   int nHits;
   double chisq;
+
+
+//eff plot
+ int eleHY[8];
+ int eleHY_hit[8];
+ TH1I* hist_all[8];
+ TH1I* hist_acc[8];
+ TH1D* hist_eff[8];
+ TH1D* paddle_diff[8];
+ TEfficiency* hodo_eff[8];
+ TEfficiency* hodo_effY[8];
+  TH1I* hist_allY[8];
+  TH1I* hist_accY[8];
+  TH1D* paddle_diffY[8];
+  TH1D* hist_effY[8];
+  TGraphAsymmErrors* graph_eff[8];
+int hitInHX[3]; 
+int x_ele[8] ;
+int y_ele[8];
+int y_eleHit[8];
 };
 
 #endif
