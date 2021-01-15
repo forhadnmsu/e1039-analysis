@@ -7,8 +7,8 @@ The primary uses of this module is to do the high voltage optimizations and effi
 1. cd work
 1. cmake-e1039-ana
 1. make install
-1. root -b -q '../macro/Fun4RealDst.C(2238)' //this run number is is faster way to generate the diffciecy plots for the dedicated run
-1. root -b -q Fun4MultiRealDst.C  //You can use this macro to run a list of DAQ runs with different high voltages that should be put in the file `list_run.txt`
+1. root -b -q '../macro/Fun4RealDst.C(2238)' &nbsp; &nbsp; &nbsp;  //this run number is is faster way to generate the diffciecy plots for the dedicated run
+1. root -b -q Fun4MultiRealDst.C  &nbsp; &nbsp; &nbsp;  //You can use this macro to run a list of DAQ runs with different high voltages that should be put in the file `list_run.txt`
 
 ## Some tips:
 
