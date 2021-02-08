@@ -217,13 +217,6 @@ int Fun4E1039Shielding(
   ktracker->Verbosity(10);
   se->registerSubsystem(ktracker);
 
-  gSystem->Load("libmodule_example.so");
-  TrkEval *trk_eval = new TrkEval();
-  trk_eval->Verbosity(0);
-  trk_eval->set_hit_container_choice("Vector");
-  trk_eval->set_out_name("trk_eval.root");
-  se->registerSubsystem(trk_eval);
-
   ///////////////////////////////////////////
   // Output
   ///////////////////////////////////////////

@@ -173,18 +173,6 @@ int Fun4HodoAccGap(
   ktracker->Verbosity(0);
   se->registerSubsystem(ktracker);
 
-  gSystem->Load("libmodule_example.so");
-  TrkEval *trk_eval = new TrkEval();
-  trk_eval->Verbosity(0);
-  trk_eval->set_hit_container_choice("Vector");
-  trk_eval->set_out_name("trk_eval.root");
-  se->registerSubsystem(trk_eval);
-
-  //TruthEval* eval = new TruthEval("TruthEval","eval.root");
-  //eval->target_l = target_l;
-  //eval->target_z = target_z;
-  //se->registerSubsystem(eval);
-
   ///////////////////////////////////////////
   // Output
   ///////////////////////////////////////////

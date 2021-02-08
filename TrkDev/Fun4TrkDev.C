@@ -37,7 +37,6 @@ R__LOAD_LIBRARY(libg4eval)
 R__LOAD_LIBRARY(libktracker)
 R__LOAD_LIBRARY(libPHPythia8)
 //R__LOAD_LIBRARY(libembedding)
-R__LOAD_LIBRARY(libmodule_example)
 #endif
 
 using namespace std;
@@ -273,13 +272,6 @@ int Fun4TrkDev(
 	ktracker->Verbosity(10);
 	ktracker->set_DS_level(0);
 	se->registerSubsystem(ktracker);
-
-	gSystem->Load("libmodule_example.so");
-	TrkEval *trk_eval = new TrkEval();
-	trk_eval->Verbosity(0);
-	trk_eval->set_hit_container_choice("Vector");
-	trk_eval->set_out_name("trk_eval.root");
-	se->registerSubsystem(trk_eval);
 
 	///////////////////////////////////////////
 	// Output

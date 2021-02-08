@@ -111,18 +111,6 @@ int Fun4Sim(const int nEvents = 1)
   digitizer->Verbosity(100);
   se->registerSubsystem(digitizer);
 
-  gSystem->Load("libmodule_example.so");
-  TestSimAnalyzer *analyzer = new TestSimAnalyzer();
-  analyzer->Verbosity(0);
-  analyzer->set_hit_container_choice("Vector");
-  analyzer->set_out_name("test_analyzer.root");
-  se->registerSubsystem(analyzer);
-
-  //TruthEval* eval = new TruthEval("TruthEval","eval.root");
-  //eval->target_l = target_l;
-  //eval->target_z = target_z;
-  //se->registerSubsystem(eval);
-
   ///////////////////////////////////////////
   // Output
   ///////////////////////////////////////////

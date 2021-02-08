@@ -1,8 +1,7 @@
-#include <top/G4_Beamline.C>
-#include <top/G4_Target.C>
-#include <top/G4_InsensitiveVolumes.C>
-#include <top/G4_SensitiveDetectors.C>
-
+#include "G4_InsensitiveVolumes.C"
+#include "G4_SensitiveDetectors.C"
+#include "G4_Beamline.C"
+#include "G4_Target.C"
 R__LOAD_LIBRARY(libfun4all)
 R__LOAD_LIBRARY(libPHPythia8)
 R__LOAD_LIBRARY(libg4detectors)
@@ -14,14 +13,70 @@ R__LOAD_LIBRARY(libembedding)
 R__LOAD_LIBRARY(libevt_filter)
 R__LOAD_LIBRARY(libktracker)
 R__LOAD_LIBRARY(libSQPrimaryGen)
+R__LOAD_LIBRARY(libpheve_display)
+R__LOAD_LIBRARY(libpheve_modules)
+R__LOAD_LIBRARY(libpheve_interface)
 using namespace std;
 
-int Fun4Sim(const int nevent = 10)
+Fun4AllServer* se;
+EvtFilter* evt_filter;
+TGLViewer* view;
+TGNumberEntry* ne_evt_id;
+TGNumberEntry* ne_trig;
+
+class EvNavHandler
+{
+  public:
+    void NextEvent()
+    {
+      printf("se->run(1)\n");
+      se->run(1, true);
+    }
+    void ReqEvtID() {
+      printf("ReqEvtID: %ld\n",ne_evt_id->GetNumberEntry()->GetIntNumber());
+      evt_filter->set_event_id_req((int)(ne_evt_id->GetNumberEntry()->GetIntNumber()));
+    }
+    void ReqTrig() {
+      printf("ReqTrig: %ld\n",ne_trig->GetNumberEntry()->GetIntNumber());
+      evt_filter->set_trigger_req((int)(ne_trig->GetNumberEntry()->GetIntNumber()));
+    }
+    void TopView()
+    {
+      printf("Top View\n");
+      view->ResetCurrentCamera();
+      view->CurrentCamera().RotateRad(-3.14/2.0, 0);
+      view->CurrentCamera().Zoom(400, 0, 0);
+      view->CurrentCamera().Truck(2800,0);
+      view->DoDraw();
+    }
+    void SideView()
+    {
+      printf("Side View\n");
+      view->ResetCurrentCamera();
+      view->CurrentCamera().Zoom(400, 0, 0);
+      view->CurrentCamera().Truck(2800,0);
+      view->DoDraw();
+    }
+    void View3D()
+    {
+      printf("3D View\n");
+      view->ResetCurrentCamera();
+      view->CurrentCamera().RotateRad(-3.14/4., -3.14/4.);
+      view->CurrentCamera().Zoom(350, 0, 0);
+      view->CurrentCamera().Truck(2000,-1500);
+      view->DoDraw();
+    }
+
+};
+
+////////////////////////////////////////////////////////////////
+//
+// Main Function
+//
+int EventDisplay4Sim(const int nevent = 10)
 {
   const double target_coil_pos_z = -300;
   const int nmu = 1;
-  int embedding_opt = 0;
-  const bool legacy_rec_container = true;
 
   const bool do_collimator = true;
   const bool do_target = true;
@@ -29,8 +84,6 @@ int Fun4Sim(const int nevent = 10)
   const bool do_fmag = true;
   const bool do_kmag = true;
   const bool do_absorber = true;
-  const bool do_dphodo = true;
-  const bool do_station1DC = false;       //station-1 drift chamber should be turned off by default
 
   const double target_l = 7.9; //cm
   const double target_z = (7.9-target_l)/2.; //cm
@@ -39,45 +92,34 @@ int Fun4Sim(const int nevent = 10)
   const double FMAGSTR = -1.054;
   const double KMAGSTR = -0.951;
 
-  const bool gen_pythia8  = true; // false;
-  const bool gen_cosmic   = false;
+  const bool gen_pythia8  = true;
   const bool gen_gun      = false;
   const bool gen_particle = false;
   const bool read_hepmc   = false;
-  const bool gen_e906legacy = false; //E906LegacyGen()
-  const bool save_in_acc  = false; //< Set true to save only in-acceptance events into DST.
+  const bool gen_e906legacy = false;
 
   recoConsts *rc = recoConsts::instance();
   rc->set_DoubleFlag("FMAGSTR", FMAGSTR);
   rc->set_DoubleFlag("KMAGSTR", KMAGSTR);
-  if(gen_cosmic) {
-    rc->init("cosmic");
-    rc->set_BoolFlag("COARSE_MODE", true);
-    rc->set_DoubleFlag("KMAGSTR", 0.);
-    rc->set_DoubleFlag("FMAGSTR", 0.);
-  }
   rc->Print();
+
+  JobOptsSvc *jobopt_svc = JobOptsSvc::instance();
+  jobopt_svc->init("run7_sim.opts");
 
   GeomSvc::UseDbSvc(true);
   GeomSvc *geom_svc = GeomSvc::instance();
-  //const double x0_shift = 0.0; //cm 
-  //std::cout << "D2X::X0: " << geom_svc->getDetectorX0("D2X") << std::endl;
-  //geom_svc->setDetectorX0("D2X", geom_svc->getDetectorX0("D2X")+x0_shift);
-  //std::cout << "D2X::X0: " << geom_svc->getDetectorX0("D2X") << std::endl;
 
   ///////////////////////////////////////////
   // Make the Server
   //////////////////////////////////////////
-  Fun4AllServer *se = Fun4AllServer::instance();
+  se = Fun4AllServer::instance();
   se->Verbosity(0);
 
-
   // pythia8
-  if(gen_pythia8) {    
+  if(gen_pythia8) {
     PHPythia8 *pythia8 = new PHPythia8();
     //pythia8->Verbosity(99);
-//    pythia8->set_config_file("phpythia8_DY.cfg");
-    pythia8->set_config_file("phpythia8_Jpsi.cfg");
+    pythia8->set_config_file("phpythia8_DY.cfg");
     pythia8->set_vertex_distribution_mean(0, 0, target_coil_pos_z, 0);
     pythia8->set_embedding_id(1);
     se->registerSubsystem(pythia8);
@@ -86,15 +128,11 @@ int Fun4Sim(const int nevent = 10)
 
     PHPy8ParticleTrigger* trigger_mup = new PHPy8ParticleTrigger();
     trigger_mup->AddParticles("-13");
-    //trigger_mup->SetPxHighLow(7, 0.5);
-    //trigger_mup->SetPyHighLow(6, -6);
     trigger_mup->SetPzHighLow(120, 10);
     pythia8->register_trigger(trigger_mup);
 
     PHPy8ParticleTrigger* trigger_mum = new PHPy8ParticleTrigger();
     trigger_mum->AddParticles("13");
-    //trigger_mum->SetPxHighLow(-0.5, 7);
-    //trigger_mum->SetPyHighLow(6, -6);
     trigger_mum->SetPzHighLow(120, 10);
     pythia8->register_trigger(trigger_mum);
   }
@@ -111,8 +149,6 @@ int Fun4Sim(const int nevent = 10)
   if(gen_gun) {
     PHG4ParticleGun *gun = new PHG4ParticleGun("GUN");
     gun->set_name("mu-");
-    //gun->set_vtx(0, 0, target_coil_pos_z);
-    //gun->set_mom(3, 3, 50);
     gun->set_vtx(30, 10, 590);
     gun->set_mom(-0.3, 2, 50);
     se->registerSubsystem(gun);
@@ -167,49 +203,38 @@ int Fun4Sim(const int nevent = 10)
   }
 
   // E906LegacyGen
+  //@
   if(gen_e906legacy){
     SQPrimaryParticleGen *e906legacy = new  SQPrimaryParticleGen();
-    
     const bool pythia_gen = false;
     const bool drellyan_gen = true;
     const bool JPsi_gen = false;
     const bool Psip_gen = false;  
-
     if(drellyan_gen){
       e906legacy->set_xfRange(0.1, 0.5); //[-1.,1.]
       e906legacy->set_massRange(0.23, 10.0);// 0.22 and above     
       e906legacy->enableDrellYanGen();
     }
-   
-   
     if(Psip_gen){ 
       e906legacy->set_xfRange(0.1, 0.5); //[-1.,1.]
       e906legacy->enablePsipGen();
     }
-
-
     if(JPsi_gen){
       e906legacy->set_xfRange(0.1, 0.5); //[-1.,1.]
       e906legacy->enableJPsiGen();
     }
-    
     if(pythia_gen) e906legacy->enablePythia();
-
     se->registerSubsystem(e906legacy);
   }
-
-  if(gen_cosmic) {
-    SQCosmicGen* cosmicGen = new SQCosmicGen();
-    se->registerSubsystem(cosmicGen);
-  }
+  //@
 
   // Fun4All G4 module
   PHG4Reco *g4Reco = new PHG4Reco();
   //PHG4Reco::G4Seed(123);
   //g4Reco->set_field(5.);
   g4Reco->set_field_map(
-      rc->get_CharFlag("fMagFile")+" "+
-      rc->get_CharFlag("kMagFile")+" "+
+      jobopt_svc->m_fMagFile+" "+
+      jobopt_svc->m_kMagFile+" "+
       Form("%f",FMAGSTR) + " " +
       Form("%f",KMAGSTR) + " " +
       "5.0",
@@ -236,72 +261,53 @@ int Fun4Sim(const int nevent = 10)
   }
 
   // sensitive elements of the spectrometer
-  SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC);
+  SetupSensitiveDetectors(g4Reco, 0);
 
   se->registerSubsystem(g4Reco);
-
-  if (save_in_acc) se->registerSubsystem(new RequireParticlesInAcc());
 
   // save truth info to the Node Tree
   PHG4TruthSubsystem *truth = new PHG4TruthSubsystem();
   g4Reco->registerSubsystem(truth);
 
-  // digitizer
-  SQDigitizer *digitizer = new SQDigitizer("DPDigitizer", 0);
-  //digitizer->Verbosity(99);
-  digitizer->set_enable_st1dc(do_station1DC);    // these two lines need to be in sync with the parameters used
-  digitizer->set_enable_dphodo(do_dphodo);       // in the SetupSensitiveVolumes() function call above
-  se->registerSubsystem(digitizer);
-
   // Make SQ nodes for truth info
   se->registerSubsystem(new TruthNodeMaker());
 
-  // embedding
-  if(embedding_opt == 1) {
-    SRawEventEmbed *embed = new SRawEventEmbed("SRawEventEmbed");
-    embed->set_in_name("digit_016070_R007.root");
-    embed->set_in_tree_name("save");
-    embed->set_trigger_bit((1<<0));
-    //embed->set_in_name("random_run3a_1.root");
-    //embed->set_in_tree_name("mb");
-    //embed->set_trigger_bit((1<<7));
-    embed->Verbosity(0);
-    se->registerSubsystem(embed);
-  }
+  // digitizer
+  DPDigitizer *digitizer = new DPDigitizer("DPDigitizer", 0);
+  //digitizer->Verbosity(99);
+  se->registerSubsystem(digitizer);
 
   // Trigger Emulator
   DPTriggerAnalyzer* dptrigger = new DPTriggerAnalyzer();
   dptrigger->set_road_set_file_name("$E1039_RESOURCE/trigger/trigger_67.txt");
+  //dptrigger->Verbosity(99);
   se->registerSubsystem(dptrigger);
 
   // Event Filter
-  //EvtFilter *evt_filter = new EvtFilter();
+  evt_filter = new EvtFilter();
   //evt_filter->Verbosity(10);
   //evt_filter->set_trigger_req(1<<5);
-  //se->registerSubsystem(evt_filter);
+  se->registerSubsystem(evt_filter);
 
-  // Tracking module
-  SQReco* reco = new SQReco();
-  reco->Verbosity(0);
-  //reco->set_geom_file_name("support/geom.root"); //not needed as it's created on the fly
-  reco->set_enable_KF(true);           //Kalman filter not needed for the track finding, disabling KF saves a lot of initialization time
-  reco->setInputTy(SQReco::E1039);     //options are SQReco::E906 and SQReco::E1039
-  reco->setFitterTy(SQReco::KFREF);    //not relavant for the track finding
-  reco->set_evt_reducer_opt("none");   //if not provided, event reducer will be using JobOptsSvc to intialize; to turn off, set it to "none", for normal tracking, set to something like "aoc"
-  reco->set_enable_eval(true);          //set to true to generate evaluation file which includes final track candidates 
-  reco->set_eval_file_name("eval.root");
-  reco->set_enable_eval_dst(false);     //set to true to include final track cnadidates in the DST tree
-  if(gen_cosmic) reco->add_eval_list(3);    //output of cosmic reco is contained in the eval output for now
-  //reco->add_eval_list(3);             //include back partial tracks in eval tree for debuging
-  //reco->add_eval_list(2);             //include station-3+/- in eval tree for debuging
-  //reco->add_eval_list(1);             //include station-2 in eval tree for debugging
-  se->registerSubsystem(reco);
+  // trakcing module
+  KalmanFastTrackingWrapper *ktracker = new KalmanFastTrackingWrapper();
+  //ktracker->Verbosity(99);
+  ktracker->set_enable_event_reducer(true);
+  ktracker->set_DS_level(0);
+  ktracker->set_pattern_db_name(gSystem->ExpandPathName("$E1039_RESOURCE/dsearch/v1/pattern.root"));
+  //ktracker->set_sim_db_name(gSystem->ExpandPathName("$E1039_RESOURCE/dsearch/v1/sim.root"));
+  //PatternDBUtil::ResScaleDC3(3);
+  //PatternDBUtil::LooseMode(false);
+  se->registerSubsystem(ktracker);
 
   VertexFit* vertexing = new VertexFit();
   se->registerSubsystem(vertexing);
 
-  //// Trim minor data nodes (to reduce the DST file size)
-  //se->registerSubsystem(new SimDstTrimmer());
+  // Event display
+  // (width, height, use_fieldmap, use_geofile, field-map name, geo-file name)
+  PHEventDisplay* disp = new PHEventDisplay(1920, 1080, false, false, "", "geom.root");
+  disp->set_verbosity(3);
+  se->registerSubsystem(disp);
 
   // input - we need a dummy to drive the event loop
   if(read_hepmc) {
@@ -315,31 +321,78 @@ int Fun4Sim(const int nevent = 10)
     se->registerInputManager(in);
   }
 
-  ///////////////////////////////////////////
-  // Output
-  ///////////////////////////////////////////
+  //
+  // Make GUI
+  //
+  g4Reco->InitRun(se->topNode());
+  disp  ->InitRun(se->topNode());
+  view = gEve->GetDefaultGLViewer();
 
-  // DST output manager
-  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", "DST.root");
-  se->registerOutputManager(out);
+  TEveBrowser* browser = gEve->GetBrowser();
+  browser->StartEmbedding(TRootBrowser::kLeft);
 
-  //if(gen_pythia8 && !read_hepmc) {
-  //  Fun4AllHepMCOutputManager *out = new Fun4AllHepMCOutputManager("HEPMCOUT", "hepmcout.txt");
-  //  out->set_embedding_id(1);
-  //  se->registerOutputManager(out);
-  //}
+  TGMainFrame* frmMain = new TGMainFrame(gClient->GetRoot(), 1000, 600);
+  frmMain->SetWindowName("Event Display");
+  frmMain->SetCleanup(kDeepCleanup);
 
-  se->run(nevent);
+  TGVerticalFrame* frmVert = new TGVerticalFrame(frmMain);
+  {
 
-  PHGeomUtility::ExportGeomtry(se->topNode(),"geom.root");
-  
-  // finish job - close and save output files
-  se->End();
-  se->PrintTimer();
-  std::cout << "All done" << std::endl;
+    TGTextButton* b = 0;
+    EvNavHandler* handler = new EvNavHandler;
+    TGHorizontalFrame* frm1 = 0;
 
-  // cleanup - delete the server and exit
-  delete se;
-  gSystem->Exit(0);
+    TGLabel* lab = 0;
+
+    frm1 = new TGHorizontalFrame(frmVert);
+    lab = new TGLabel(frm1, "Event ID");
+    frm1->AddFrame(lab, new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 5, 5, 3, 4));
+    ne_evt_id = new TGNumberEntry(frm1, -1, 9, 999, TGNumberFormat::kNESInteger,
+        TGNumberFormat::kNEAAnyNumber,
+        TGNumberFormat::kNELLimitMinMax,
+        -999999, 999999);
+    ne_evt_id->Connect("ValueSet(Long_t)", "EvNavHandler", handler, "ReqEvtID()");
+    frm1->AddFrame(ne_evt_id, new TGLayoutHints(kLHintsCenterY | kLHintsRight, 5, 5, 5, 5));
+    frmVert->AddFrame(frm1);
+
+
+    frm1 = new TGHorizontalFrame(frmVert);
+    lab = new TGLabel(frm1, "Trigger");
+    frm1->AddFrame(lab, new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 5, 5, 3, 4));
+    ne_trig = new TGNumberEntry(frm1, -1, 9, 999, TGNumberFormat::kNESInteger,
+        TGNumberFormat::kNEAAnyNumber,
+        TGNumberFormat::kNELLimitMinMax,
+        -999, 999);
+    ne_trig->Connect("ValueSet(Long_t)", "EvNavHandler", handler, "ReqTrig()");
+    frm1->AddFrame(ne_trig, new TGLayoutHints(kLHintsCenterY | kLHintsRight, 5, 5, 5, 5));
+    frmVert->AddFrame(frm1);
+
+
+    b = new TGTextButton(frmVert, "Next Event");
+    frmVert->AddFrame(b, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+    b->Connect("Clicked()", "EvNavHandler", handler, "NextEvent()");
+
+    b = new TGTextButton(frmVert, "Top View");
+    frmVert->AddFrame(b, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+    b->Connect("Clicked()", "EvNavHandler", handler, "TopView()");
+
+    b = new TGTextButton(frmVert, "Side View");
+    frmVert->AddFrame(b, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+    b->Connect("Clicked()", "EvNavHandler", handler, "SideView()");
+
+    b = new TGTextButton(frmVert, "3D View");
+    frmVert->AddFrame(b, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+    b->Connect("Clicked()", "EvNavHandler", handler, "View3D()");
+
+  }
+  frmMain->AddFrame(frmVert);
+
+  frmMain->MapSubwindows();
+  frmMain->Resize();
+  frmMain->MapWindow();
+
+  browser->StopEmbedding();
+  browser->SetTabTitle("Event Control", 0);
+
   return 0;
 }

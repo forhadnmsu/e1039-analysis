@@ -1,39 +1,33 @@
 #!/bin/bash
 
+dir_macros=$(dirname $(readlink -f $BASH_SOURCE))
+LIFE_TIME=medium # short (3h), medium (8h) or long (23h)
+
 jobname=$1
 do_sub=$2
-
 njobs=$3
 nevents=$4
 
-nmu=1
-LIFE_TIME=medium # short (3h), medium (8h) or long (23h)
-
-if [ $do_sub == 1 ]; then
-  echo "grid!"
-else
-  echo "local!"
-fi
-
 echo "njobs=$njobs"
 echo "nevents=$nevents"
-
-macros=$(dirname $(readlink -f $BASH_SOURCE))
-
-sed "s/nevents=NAN/nevents=$nevents/"             $macros/gridrun.sh > $macros/gridrun_new.sh 
-sed -i "s/nmu=NAN/nmu=$nmu/"                      $macros/gridrun_new.sh
-chmod +x $macros/gridrun_new.sh
-
 if [ $do_sub == 1 ]; then
-work=/pnfs/e906/persistent/users/$USER/SimChainDev/$jobname
+    echo "Grid mode."
+    if ! which jobsub_submit &>/dev/null ; then
+	echo "Command 'jobsub_submit' not found."
+	echo "Forget 'source /e906/app/software/script/setup-jobsub-spinquest.sh'?"
+	exit
+    fi
+    work=/pnfs/e906/persistent/users/$USER/SimChainDev/$jobname
+    ln -sf /pnfs/e906/persistent/users/$USER/SimChainDev data
 else
-work=$macros/scratch/$jobname
+    echo "Local mode."
+    work=$dir_macros/scratch/$jobname
 fi
 
 mkdir -p $work
 chmod -R 01755 $work
 
-cd $macros
+cd $dir_macros
 tar -czvf $work/input.tar.gz *.C *.cfg *.opts
 cd -
 
@@ -43,25 +37,24 @@ do
   mkdir -p $work/$id/out
   chmod -R 01755 $work/$id
 
-  rsync -av $macros/gridrun_new.sh $work/$id/gridrun_new.sh
-
-  cmd="jobsub_submit"
-  cmd="$cmd -g --OS=SL7 --use_gftp --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE -e IFDHC_VERSION --expected-lifetime='$LIFE_TIME'"
-  cmd="$cmd --mail_never"
-  cmd="$cmd -L $work/$id/log/log.txt"
-  cmd="$cmd -f $work/input.tar.gz"
-  cmd="$cmd -d OUTPUT $work/$id/out"
-  cmd="$cmd --append_condor_requirements='(TARGET.GLIDEIN_Site isnt \"UCSD\")'"
-  cmd="$cmd file://`which $work/$id/gridrun_new.sh`"
+  rsync -av $dir_macros/gridrun.sh $work/$id/gridrun.sh
 
   if [ $do_sub == 1 ]; then
-    echo $cmd
+    cmd="jobsub_submit"
+    cmd="$cmd -g --OS=SL7 --use_gftp --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE -e IFDHC_VERSION --expected-lifetime='$LIFE_TIME'"
+    cmd="$cmd --mail_never"
+    cmd="$cmd -L $work/$id/log/log.txt"
+    cmd="$cmd -f $work/input.tar.gz"
+    cmd="$cmd -d OUTPUT $work/$id/out"
+    cmd="$cmd --append_condor_requirements='(TARGET.GLIDEIN_Site isnt \"UCSD\")'"
+    cmd="$cmd file://`which $work/$id/gridrun.sh` $nevents $id"
+    echo "$cmd"
     $cmd
   else
     mkdir -p $work/$id/input
     rsync -av $work/input.tar.gz $work/$id/input
     cd $work/$id/
-    $work/$id/gridrun_new.sh | tee $work/$id/log/log.txt
+    $work/$id/gridrun.sh $nevents $id | tee $work/$id/log/log.txt
     cd -
   fi
 done 2>&1 | tee log_gridsub.txt
