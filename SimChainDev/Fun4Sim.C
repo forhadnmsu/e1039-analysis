@@ -45,7 +45,7 @@ int Fun4Sim(const int nevent = 10)
   const bool gen_particle = false;
   const bool read_hepmc   = false;
   const bool gen_e906legacy = false; //E906LegacyGen()
-  const bool save_in_acc  = false; //< Set true to save only in-acceptance events into DST.
+  const bool save_in_acc  = true; //< Set true to save only in-acceptance events into DST.
 
   recoConsts *rc = recoConsts::instance();
   rc->set_DoubleFlag("FMAGSTR", FMAGSTR);
@@ -71,14 +71,24 @@ int Fun4Sim(const int nevent = 10)
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
 
-
   // pythia8
   if(gen_pythia8) {    
     PHPythia8 *pythia8 = new PHPythia8();
     //pythia8->Verbosity(99);
-//    pythia8->set_config_file("phpythia8_DY.cfg");
-    pythia8->set_config_file("phpythia8_Jpsi.cfg");
+    pythia8->set_config_file("phpythia8_DY.cfg");
+    //pythia8->set_config_file("phpythia8_Jpsi.cfg");
+    //pythia8->set_config_file("phpythia8_OCharm.cfg");
     pythia8->set_vertex_distribution_mean(0, 0, target_coil_pos_z, 0);
+    pythia8->set_vertex_distribution_function(PHHepMCGenHelper::Uniform,
+
+                                              PHHepMCGenHelper::Uniform,
+
+                                              PHHepMCGenHelper::Uniform,
+    
+                                              PHHepMCGenHelper::Uniform);
+    
+    pythia8->set_vertex_distribution_width(0,0,4.,0);
+
     pythia8->set_embedding_id(1);
     se->registerSubsystem(pythia8);
 
@@ -290,7 +300,7 @@ int Fun4Sim(const int nevent = 10)
   reco->set_evt_reducer_opt("none");   //if not provided, event reducer will be using JobOptsSvc to intialize; to turn off, set it to "none", for normal tracking, set to something like "aoc"
   reco->set_enable_eval(true);          //set to true to generate evaluation file which includes final track candidates 
   reco->set_eval_file_name("eval.root");
-  reco->set_enable_eval_dst(false);     //set to true to include final track cnadidates in the DST tree
+  reco->set_enable_eval_dst(true);     //set to true to include final track cnadidates in the DST tree
   if(gen_cosmic) reco->add_eval_list(3);    //output of cosmic reco is contained in the eval output for now
   //reco->add_eval_list(3);             //include back partial tracks in eval tree for debuging
   //reco->add_eval_list(2);             //include station-3+/- in eval tree for debuging
@@ -298,6 +308,7 @@ int Fun4Sim(const int nevent = 10)
   se->registerSubsystem(reco);
 
   VertexFit* vertexing = new VertexFit();
+  vertexing->enable_fit_target_center();
   se->registerSubsystem(vertexing);
 
   //// Trim minor data nodes (to reduce the DST file size)
