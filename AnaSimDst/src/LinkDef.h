@@ -11,5 +11,7 @@
 
 #pragma link C++ class FilterSimEvent-!;
 #pragma link C++ class AnaSimDst-!;
+#pragma link C++ class AnaRunInfo-!;
+
 
 #endif

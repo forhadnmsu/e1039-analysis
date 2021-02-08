@@ -6,13 +6,14 @@
 struct EventData {
   int proc_id;
   int par_id[4]; // 2 -> 2
+  int parent_id[2]; // 2 -> 2
   TLorentzVector par_mom[4];
   int trig_bits;
   int rec_stat;
   int n_dim_true;
   int n_dim_reco;
-  bool trig_matrix1;
-  bool trig_matrix2;
+  bool fpga1;
+  bool fpga2;
 
   EventData();
   virtual ~EventData() {;}
@@ -22,10 +23,10 @@ struct EventData {
 
 struct TrackData {
   int            charge;
-  int 		 nhodo;
   TVector3       pos_vtx;
   TLorentzVector mom_vtx;
-
+  TLorentzVector mom_trk;
+   int            nhodo;
   TrackData();
   virtual ~TrackData() {;}
 
