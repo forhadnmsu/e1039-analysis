@@ -12,9 +12,10 @@ int Fun4SimDst(const int   n_dst_ana=0,
   Fun4AllServer* se = Fun4AllServer::instance();
   //se->Verbosity(1);
   Fun4AllInputManager *in = new Fun4AllDstInputManager("SimDst");
-  se->registerInputManager(in);
-
+   se->registerInputManager(in);
   //se->registerSubsystem(new FilterSimEvent());
+
+  se->registerSubsystem(new AnaRunInfo("lumi_list.txt", "lumi_tot.txt"));
 
   Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", fn_udst);
   se->registerOutputManager(out);
@@ -24,6 +25,10 @@ int Fun4SimDst(const int   n_dst_ana=0,
   out->AddNode("SQMCEvent");
   out->AddNode("SQTruthTrackVector");
   out->AddNode("SQTruthDimuonVector");
+  out->AddNode("PHHepMCGenEventMap");
+  out->AddNode("PHG4TruthInfoContainer");
+  out->AddNode("PHG4HitContainer");
+  out->AddNode("G4TruthInfo");
 
   vector<string> list_dst;
   string fn_dst;
@@ -39,6 +44,7 @@ int Fun4SimDst(const int   n_dst_ana=0,
     string fn_dst = list_dst[i_dst];
     cout << "DST: " << i_dst << "/" << n_dst << ": " << fn_dst << endl;
     in->fileopen(fn_dst);
+     in->SetRunNumber(i_dst+1); /////  Trick to execute InitRun() per DST
     se->run();
   }
 
